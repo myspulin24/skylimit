@@ -1,0 +1,21 @@
+# Worker, který přijímá zpětnou vazbu ze Skylimitu a zakládá z ní issue
+# v soukromém repozitáři. Nasazení a tajemství: viz README.md vedle.
+
+name = "skylimit-feedback"
+main = "src/index.ts"
+compatibility_date = "2026-09-01"
+
+# Kam se zpětná vazba doručuje. Token k němu je tajemství (`wrangler secret put
+# GITHUB_TOKEN`), ne proměnná: tady by ho viděl každý, kdo čte repozitář.
+[vars]
+GITHUB_REPO = "myspulin24/skylimit-feedback"
+
+# Pár odeslání za minutu z jedné adresy. Síto na roboty, ne zámek.
+# Jmenný prostor je v rámci účtu Cloudflare; Pilcrow má 1001.
+[[ratelimits]]
+name = "LIMITER"
+namespace_id = "1002"
+simple = { limit = 5, period = 60 }
+
+[observability]
+enabled = true

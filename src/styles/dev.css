@@ -1,0 +1,105 @@
+/* Browser mock mode only: a fake desktop behind the transparent widget, the
+   state switcher and the mood gallery. Never shown inside Tauri. */
+
+html.mock[data-window="widget"] body {
+  background:
+    radial-gradient(900px 600px at 20% 10%, #3a5f8f 0%, transparent 60%),
+    radial-gradient(800px 700px at 85% 80%, #6b4a7a 0%, transparent 55%),
+    #1d2635;
+}
+
+html.mock[data-window="widget"] #root {
+  width: 360px;
+  height: 480px;
+  margin: 32px auto 0;
+  outline: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.dev-switcher {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  left: 12px;
+  z-index: 50;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(14, 16, 20, 0.88);
+  font-size: 12px;
+}
+
+.dev-title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+.dev-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.dev-switcher a {
+  padding: 3px 8px;
+  border-radius: 6px;
+  color: var(--ink-2);
+  text-decoration: none;
+}
+
+.dev-switcher a:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dev-switcher a.is-on {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--ink-1);
+}
+
+.gallery {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 24px 28px 96px;
+}
+
+.gallery h1 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.gallery h2 {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+.gallery-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+}
+
+.gallery figure {
+  margin: 0;
+  padding: 10px 8px 8px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+  text-align: center;
+}
+
+.gallery figcaption {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+.gallery code {
+  display: block;
+  font-size: 10.5px;
+  color: var(--ink-4);
+}

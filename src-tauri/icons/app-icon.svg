@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- AI Usage app icon: a round coral creature inside a teal usage gauge on a dark tile.
+       Colors follow the UI tokens: claude #d9734e, codex #2fa88f, surface-0 #111419. -->
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#232933"/>
+      <stop offset="1" stop-color="#111419"/>
+    </linearGradient>
+    <radialGradient id="body" cx="0.38" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#f29a78"/>
+      <stop offset="0.55" stop-color="#d9734e"/>
+      <stop offset="1" stop-color="#bf5d3b"/>
+    </radialGradient>
+    <linearGradient id="gauge" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0" stop-color="#2fa88f"/>
+      <stop offset="1" stop-color="#4cc7ac"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="40" y="40" width="944" height="944" rx="216" fill="url(#tile)"/>
+
+  <!-- gauge: track, then value (open at the bottom) -->
+  <path d="M 271.58 788.42 A 340 340 0 1 1 752.42 788.42" fill="none" stroke="#2b313c" stroke-width="60" stroke-linecap="round"/>
+  <path d="M 271.58 788.42 A 340 340 0 0 1 682 253.55" fill="none" stroke="url(#gauge)" stroke-width="60" stroke-linecap="round"/>
+
+  <!-- creature -->
+  <ellipse cx="512" cy="592" rx="236" ry="218" fill="url(#body)"/>
+  <ellipse cx="434" cy="566" rx="31" ry="41" fill="#111419"/>
+  <ellipse cx="590" cy="566" rx="31" ry="41" fill="#111419"/>
+  <circle cx="445" cy="550" r="11" fill="#ffffff"/>
+  <circle cx="601" cy="550" r="11" fill="#ffffff"/>
+  <ellipse cx="380" cy="630" rx="30" ry="19" fill="#f6a98c" opacity="0.6"/>
+  <ellipse cx="644" cy="630" rx="30" ry="19" fill="#f6a98c" opacity="0.6"/>
+  <path d="M 468 642 Q 512 684 556 642" fill="none" stroke="#111419" stroke-width="18" stroke-linecap="round"/>
+</svg>

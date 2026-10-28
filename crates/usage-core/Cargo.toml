@@ -1,0 +1,31 @@
+[package]
+name = "usage-core"
+version = "0.1.0"
+description = "ai-usage core: Claude JSONL cost, Codex app-server limits, score, moods. No Tauri dependency."
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+notify.workspace = true
+tokio.workspace = true
+chrono.workspace = true
+chrono-tz.workspace = true
+memchr.workspace = true
+reqwest.workspace = true
+rustls.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_System_JobObjects",
+    "Win32_System_Threading",
+    "Win32_System_Diagnostics_ToolHelp",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true

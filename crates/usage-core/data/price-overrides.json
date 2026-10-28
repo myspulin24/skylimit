@@ -1,0 +1,4 @@
+{
+  "_comment": "Prices for models missing from the LiteLLM snapshot (prices.json). Same per-token field names as LiteLLM, USD per token. Every entry MUST carry a \"source\" URL to an official price list; entries without one are ignored. Never add a guessed price: a model without a price lands in unpricedTokens instead.",
+  "models": {}
+}

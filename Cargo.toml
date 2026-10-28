@@ -1,0 +1,31 @@
+[workspace]
+resolver = "2"
+members = ["crates/usage-core", "src-tauri"]
+
+[workspace.package]
+edition = "2021"
+license = "MIT"
+authors = ["Michal Jašek"]
+
+[workspace.dependencies]
+usage-core = { path = "crates/usage-core" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["raw_value"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+notify = "6"
+tokio = { version = "1", default-features = false, features = ["sync"] }
+chrono = { version = "0.4", default-features = false, features = ["std", "clock"] }
+chrono-tz = "0.10"
+memchr = "2"
+# Same HTTP/TLS stack as Pilcrow: rustls with the ring provider, no aws-lc build.
+reqwest = { version = "0.13", default-features = false, features = ["blocking", "rustls-no-provider"] }
+rustls = { version = "0.23", default-features = false, features = ["ring"] }
+windows-sys = "0.59"
+tempfile = "3"
+
+# Release build of the desktop app (`npm run package`): small, single-unit.
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+strip = true

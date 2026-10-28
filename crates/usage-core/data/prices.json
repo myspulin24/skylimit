@@ -1,0 +1,1637 @@
+{
+ "_meta": {
+  "source": "https://raw.githubusercontent.com/BerriAI/litellm/main/model_prices_and_context_window.json",
+  "license": "MIT (BerriAI/litellm)",
+  "fetched": "2026-10-28",
+  "note": "Filtered to Anthropic claude* and OpenAI gpt*/o*/*codex* chat models; batch and flex prices dropped. Prices are USD per token."
+ },
+ "claude-haiku-4-5-20251001": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000125,
+  "cache_creation_input_token_cost_above_1hr": 0.000002,
+  "cache_read_input_token_cost": 1e-7,
+  "input_cost_per_token": 0.000001,
+  "output_cost_per_token": 0.000005
+ },
+ "claude-haiku-4-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000125,
+  "cache_creation_input_token_cost_above_1hr": 0.000002,
+  "cache_read_input_token_cost": 1e-7,
+  "input_cost_per_token": 0.000001,
+  "output_cost_per_token": 0.000005,
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-sonnet-4-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000375,
+  "cache_creation_input_token_cost_above_1hr": 0.000006,
+  "cache_read_input_token_cost": 3e-7,
+  "input_cost_per_token": 0.000003,
+  "output_cost_per_token": 0.000015,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-sonnet-4-5-20250929": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000375,
+  "cache_creation_input_token_cost_above_1hr": 0.000006,
+  "cache_read_input_token_cost": 3e-7,
+  "input_cost_per_token": 0.000003,
+  "output_cost_per_token": 0.000015,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://docs.anthropic.com/en/docs/about-claude/pricing"
+ },
+ "claude-sonnet-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000025,
+  "cache_creation_input_token_cost_above_1hr": 0.000004,
+  "cache_read_input_token_cost": 2e-7,
+  "input_cost_per_token": 0.000002,
+  "output_cost_per_token": 0.00001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-sonnet-5-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000025,
+  "cache_creation_input_token_cost_above_1hr": 0.000004,
+  "cache_read_input_token_cost": 1e-7,
+  "input_cost_per_token": 0.000002,
+  "output_cost_per_token": 0.00001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-sonnet-4-6": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000375,
+  "cache_creation_input_token_cost_above_1hr": 0.000006,
+  "cache_read_input_token_cost": 3e-7,
+  "input_cost_per_token": 0.000003,
+  "output_cost_per_token": 0.000015,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-4-5-20251101": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  }
+ },
+ "claude-opus-4-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-4-6": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-4-6-20260205": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  }
+ },
+ "claude-opus-4-7": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-4-7-20260416": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  }
+ },
+ "claude-fable-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_1hr": 0.00002,
+  "cache_read_input_token_cost": 0.000001,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00005,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-fable-5-1": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_1hr": 0.00002,
+  "cache_read_input_token_cost": 2.5e-7,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00005,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-5-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.000005,
+  "cache_creation_input_token_cost_above_1hr": 0.000008,
+  "cache_read_input_token_cost": 2e-7,
+  "input_cost_per_token": 0.000004,
+  "output_cost_per_token": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1,
+   "fast": 2
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1,
+   "fast": 2
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-opus-4-8": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000625,
+  "cache_creation_input_token_cost_above_1hr": 0.00001,
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1,
+   "fast": 2
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "gpt-3.5-turbo": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 5e-7,
+  "output_cost_per_token": 0.0000015,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-3.5-turbo-0125": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 5e-7,
+  "output_cost_per_token": 0.0000015,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-3.5-turbo-1106": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.000001,
+  "output_cost_per_token": 0.000002,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-3.5-turbo-16k": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.000003,
+  "output_cost_per_token": 0.000004
+ },
+ "gpt-4": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.00003,
+  "output_cost_per_token": 0.00006
+ },
+ "gpt-4-0613": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.00003,
+  "output_cost_per_token": 0.00006,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4-1106-preview": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00003
+ },
+ "gpt-4-turbo": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00003
+ },
+ "gpt-4-turbo-2024-04-09": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00003,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_priority": 8.75e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000008,
+  "output_cost_per_token_priority": 0.000014,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1-2025-04-14": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_priority": 8.75e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000008,
+  "output_cost_per_token_priority": 0.000014,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1e-7,
+  "cache_read_input_token_cost_priority": 1.75e-7,
+  "input_cost_per_token": 4e-7,
+  "input_cost_per_token_priority": 7e-7,
+  "output_cost_per_token": 0.0000016,
+  "output_cost_per_token_priority": 0.0000028,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1-mini-2025-04-14": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1e-7,
+  "cache_read_input_token_cost_priority": 1.75e-7,
+  "input_cost_per_token": 4e-7,
+  "input_cost_per_token_priority": 7e-7,
+  "output_cost_per_token": 0.0000016,
+  "output_cost_per_token_priority": 0.0000028,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1-nano": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-8,
+  "cache_read_input_token_cost_priority": 5e-8,
+  "input_cost_per_token": 1e-7,
+  "input_cost_per_token_priority": 2e-7,
+  "output_cost_per_token": 4e-7,
+  "output_cost_per_token_priority": 8e-7,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4.1-nano-2025-04-14": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-8,
+  "cache_read_input_token_cost_priority": 5e-8,
+  "input_cost_per_token": 1e-7,
+  "input_cost_per_token_priority": 2e-7,
+  "output_cost_per_token": 4e-7,
+  "output_cost_per_token_priority": 8e-7,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.00000125,
+  "cache_read_input_token_cost_priority": 0.000002125,
+  "input_cost_per_token": 0.0000025,
+  "input_cost_per_token_priority": 0.00000425,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.000017,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o-2024-05-13": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "input_cost_per_token": 0.000005,
+  "input_cost_per_token_priority": 0.00000875,
+  "output_cost_per_token": 0.000015,
+  "output_cost_per_token_priority": 0.00002625,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o-2024-08-06": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.00000125,
+  "cache_read_input_token_cost_priority": 0.000002125,
+  "input_cost_per_token": 0.0000025,
+  "input_cost_per_token_priority": 0.00000425,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.000017,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o-2024-11-20": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.00000125,
+  "cache_read_input_token_cost_priority": 0.000002125,
+  "input_cost_per_token": 0.0000025,
+  "input_cost_per_token_priority": 0.00000425,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.000017,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 7.5e-8,
+  "cache_read_input_token_cost_priority": 1.25e-7,
+  "input_cost_per_token": 1.5e-7,
+  "input_cost_per_token_priority": 2.5e-7,
+  "output_cost_per_token": 6e-7,
+  "output_cost_per_token_priority": 0.000001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-4o-mini-2024-07-18": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 7.5e-8,
+  "cache_read_input_token_cost_priority": 1.25e-7,
+  "input_cost_per_token": 1.5e-7,
+  "input_cost_per_token_priority": 2.5e-7,
+  "output_cost_per_token": 6e-7,
+  "output_cost_per_token_priority": 0.000001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.025,
+   "search_context_size_low": 0.025,
+   "search_context_size_medium": 0.025
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "cache_read_input_token_cost_priority": 2.5e-7,
+  "input_cost_per_token": 0.00000125,
+  "input_cost_per_token_priority": 0.0000025,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-codex": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5-codex"
+ },
+ "gpt-5.1": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "cache_read_input_token_cost_priority": 2.5e-7,
+  "input_cost_per_token": 0.00000125,
+  "input_cost_per_token_priority": 0.0000025,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.1-codex-mini": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 2.5e-8,
+  "input_cost_per_token": 2.5e-7,
+  "output_cost_per_token": 0.000002,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.1-codex-mini"
+ },
+ "gpt-5.1-codex-max": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.1-codex-max"
+ },
+ "gpt-5.1-codex": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.1-codex"
+ },
+ "gpt-5.1-chat-latest": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.1-chat-latest"
+ },
+ "gpt-5.1-2025-11-13": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "cache_read_input_token_cost_priority": 2.5e-7,
+  "input_cost_per_token": 0.00000125,
+  "input_cost_per_token_priority": 0.0000025,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.2": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.75e-7,
+  "cache_read_input_token_cost_priority": 3.5e-7,
+  "input_cost_per_token": 0.00000175,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000014,
+  "output_cost_per_token_priority": 0.000028,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.2-codex": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 1.75e-7,
+  "input_cost_per_token": 0.00000175,
+  "output_cost_per_token": 0.000014,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.2-codex"
+ },
+ "gpt-5.2-chat-latest": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.75e-7,
+  "input_cost_per_token": 0.00000175,
+  "output_cost_per_token": 0.000014,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.2-chat-latest"
+ },
+ "gpt-5.2-2025-12-11": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.75e-7,
+  "cache_read_input_token_cost_priority": 3.5e-7,
+  "input_cost_per_token": 0.00000175,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000014,
+  "output_cost_per_token_priority": 0.000028,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.2-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.000021,
+  "output_cost_per_token": 0.000168,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.2-pro-2025-12-11": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.000021,
+  "output_cost_per_token": 0.000168,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-6-astra": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_12hr": 0.000025,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00005,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.0001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_ultrafast": 0.0003,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00005,
+  "cache_creation_input_token_cost_above_12hr_ultrafast": 0.00015,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.000025,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00005,
+  "cache_creation_input_token_cost_priority": 0.000025,
+  "cache_read_input_token_cost": 0.000001,
+  "cache_read_input_token_cost_above_272k_tokens": 0.000002,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 0.000004,
+  "cache_creation_input_token_cost_above_272k_tokens_ultrafast": 0.00015,
+  "cache_creation_input_token_cost_ultrafast": 0.000075,
+  "cache_read_input_token_cost_above_272k_tokens_ultrafast": 0.000012,
+  "cache_read_input_token_cost_priority": 0.000002,
+  "cache_read_input_token_cost_ultrafast": 0.000006,
+  "input_cost_per_token": 0.00001,
+  "input_cost_per_token_above_272k_tokens": 0.00002,
+  "input_cost_per_token_above_272k_tokens_priority": 0.00004,
+  "input_cost_per_token_above_272k_tokens_ultrafast": 0.00012,
+  "input_cost_per_token_priority": 0.00002,
+  "input_cost_per_token_ultrafast": 0.00006,
+  "output_cost_per_token": 0.00005,
+  "output_cost_per_token_above_272k_tokens": 0.000075,
+  "output_cost_per_token_above_272k_tokens_priority": 0.00015,
+  "output_cost_per_token_above_272k_tokens_ultrafast": 0.00045,
+  "output_cost_per_token_priority": 0.0001,
+  "output_cost_per_token_ultrafast": 0.0003,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-6-sol": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000025,
+  "cache_creation_input_token_cost_above_12hr": 0.000005,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00002,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00001,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.000005,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00001,
+  "cache_creation_input_token_cost_priority": 0.000005,
+  "cache_read_input_token_cost": 2e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 8e-7,
+  "cache_read_input_token_cost_priority": 4e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_above_272k_tokens": 0.000004,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000008,
+  "input_cost_per_token_priority": 0.000004,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_above_272k_tokens": 0.000015,
+  "output_cost_per_token_above_272k_tokens_priority": 0.00003,
+  "output_cost_per_token_priority": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-6-luna": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 1.25e-7,
+  "cache_creation_input_token_cost_above_12hr": 2.5e-7,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 5e-7,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.000001,
+  "cache_creation_input_token_cost_above_12hr_priority": 5e-7,
+  "cache_creation_input_token_cost_decisions": 1.25e-7,
+  "cache_creation_input_token_cost_above_272k_tokens": 2.5e-7,
+  "cache_creation_input_token_cost_above_272k_tokens_decisions": 2.5e-7,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 5e-7,
+  "cache_creation_input_token_cost_priority": 2.5e-7,
+  "cache_read_input_token_cost": 1e-8,
+  "cache_read_input_token_cost_decisions": 1e-8,
+  "cache_read_input_token_cost_above_272k_tokens": 2e-8,
+  "cache_read_input_token_cost_above_272k_tokens_decisions": 2e-8,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 4e-8,
+  "cache_read_input_token_cost_priority": 2e-8,
+  "input_cost_per_token": 1e-7,
+  "input_cost_per_token_decisions": 1e-7,
+  "input_cost_per_token_above_272k_tokens": 2e-7,
+  "input_cost_per_token_above_272k_tokens_decisions": 2e-7,
+  "input_cost_per_token_above_272k_tokens_priority": 4e-7,
+  "input_cost_per_token_priority": 2e-7,
+  "output_cost_per_token": 5e-7,
+  "output_cost_per_token_decisions": 0,
+  "output_cost_per_token_above_272k_tokens": 7.5e-7,
+  "output_cost_per_token_above_272k_tokens_decisions": 0,
+  "output_cost_per_token_above_272k_tokens_priority": 0.0000015,
+  "output_cost_per_token_priority": 0.000001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.6": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.000005,
+  "cache_creation_input_token_cost_above_12hr": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00002,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00004,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00002,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.00001,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00002,
+  "cache_creation_input_token_cost_priority": 0.00001,
+  "cache_read_input_token_cost": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 8e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 0.0000016,
+  "cache_read_input_token_cost_priority": 8e-7,
+  "input_cost_per_token": 0.000004,
+  "input_cost_per_token_above_272k_tokens": 0.000008,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000016,
+  "input_cost_per_token_priority": 0.000008,
+  "output_cost_per_token": 0.00002,
+  "output_cost_per_token_above_272k_tokens": 0.00003,
+  "output_cost_per_token_above_272k_tokens_priority": 0.00006,
+  "output_cost_per_token_priority": 0.00004,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  }
+ },
+ "gpt-5.6-sol": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.000005,
+  "cache_creation_input_token_cost_above_12hr": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00002,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00004,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00002,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.00001,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00002,
+  "cache_creation_input_token_cost_priority": 0.00001,
+  "cache_read_input_token_cost": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 8e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 0.0000016,
+  "cache_read_input_token_cost_priority": 8e-7,
+  "input_cost_per_token": 0.000004,
+  "input_cost_per_token_above_272k_tokens": 0.000008,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000016,
+  "input_cost_per_token_priority": 0.000008,
+  "output_cost_per_token": 0.00002,
+  "output_cost_per_token_above_272k_tokens": 0.00003,
+  "output_cost_per_token_above_272k_tokens_priority": 0.00006,
+  "output_cost_per_token_priority": 0.00004,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.6-terra": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000025,
+  "cache_creation_input_token_cost_above_12hr": 0.000005,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00002,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00001,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.000005,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00001,
+  "cache_creation_input_token_cost_priority": 0.000005,
+  "cache_read_input_token_cost": 2e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 8e-7,
+  "cache_read_input_token_cost_priority": 4e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_above_272k_tokens": 0.000004,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000008,
+  "input_cost_per_token_priority": 0.000004,
+  "output_cost_per_token": 0.000012,
+  "output_cost_per_token_above_272k_tokens": 0.000018,
+  "output_cost_per_token_above_272k_tokens_priority": 0.000036,
+  "output_cost_per_token_priority": 0.000024,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.6-luna": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 2.5e-7,
+  "cache_creation_input_token_cost_above_12hr": 5e-7,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.000001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.000002,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.000001,
+  "cache_creation_input_token_cost_above_272k_tokens": 5e-7,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.000001,
+  "cache_creation_input_token_cost_priority": 5e-7,
+  "cache_read_input_token_cost": 2e-8,
+  "cache_read_input_token_cost_above_272k_tokens": 4e-8,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 8e-8,
+  "cache_read_input_token_cost_priority": 4e-8,
+  "input_cost_per_token": 2e-7,
+  "input_cost_per_token_above_272k_tokens": 4e-7,
+  "input_cost_per_token_above_272k_tokens_priority": 8e-7,
+  "input_cost_per_token_priority": 4e-7,
+  "output_cost_per_token": 0.0000012,
+  "output_cost_per_token_above_272k_tokens": 0.0000018,
+  "output_cost_per_token_above_272k_tokens_priority": 0.0000036,
+  "output_cost_per_token_priority": 0.0000024,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.6-cyber": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.000015625,
+  "cache_creation_input_token_cost_above_12hr": 0.00003125,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.00003125,
+  "cache_read_input_token_cost": 0.00000125,
+  "cache_read_input_token_cost_above_272k_tokens": 0.0000025,
+  "input_cost_per_token": 0.0000125,
+  "input_cost_per_token_above_272k_tokens": 0.000025,
+  "output_cost_per_token": 0.000075,
+  "output_cost_per_token_above_272k_tokens": 0.0001125,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-daybreak-red-latest": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_creation_input_token_cost": 0.000015625,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.00003125,
+  "cache_read_input_token_cost": 0.00000125,
+  "cache_read_input_token_cost_above_272k_tokens": 0.0000025,
+  "input_cost_per_token": 0.0000125,
+  "input_cost_per_token_above_272k_tokens": 0.000025,
+  "output_cost_per_token": 0.000075,
+  "output_cost_per_token_above_272k_tokens": 0.0001125,
+  "source": "https://developers.openai.com/api/docs/models/gpt-daybreak-red-latest"
+ },
+ "gpt-daybreak-blue-latest": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_creation_input_token_cost": 0.000005,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.00001,
+  "cache_read_input_token_cost": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 8e-7,
+  "input_cost_per_token": 0.000004,
+  "input_cost_per_token_above_272k_tokens": 0.000008,
+  "output_cost_per_token": 0.00002,
+  "output_cost_per_token_above_272k_tokens": 0.00003,
+  "source": "https://developers.openai.com/api/docs/models/gpt-daybreak-blue-latest"
+ },
+ "gpt-5.5": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 0.000001,
+  "cache_read_input_token_cost_priority": 0.00000125,
+  "input_cost_per_token": 0.000005,
+  "input_cost_per_token_above_272k_tokens": 0.00001,
+  "input_cost_per_token_priority": 0.0000125,
+  "output_cost_per_token": 0.00003,
+  "output_cost_per_token_above_272k_tokens": 0.000045,
+  "output_cost_per_token_priority": 0.000075,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.5-2026-04-23": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 0.000001,
+  "cache_read_input_token_cost_priority": 0.00000125,
+  "input_cost_per_token": 0.000005,
+  "input_cost_per_token_above_272k_tokens": 0.00001,
+  "input_cost_per_token_priority": 0.0000125,
+  "output_cost_per_token": 0.00003,
+  "output_cost_per_token_above_272k_tokens": 0.000045,
+  "output_cost_per_token_priority": 0.000075,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.5-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00003,
+  "input_cost_per_token_above_272k_tokens": 0.00006,
+  "output_cost_per_token": 0.00018,
+  "output_cost_per_token_above_272k_tokens": 0.00027,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.5-pro-2026-04-23": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00003,
+  "input_cost_per_token_above_272k_tokens": 0.00006,
+  "output_cost_per_token": 0.00018,
+  "output_cost_per_token_above_272k_tokens": 0.00027,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 5e-7,
+  "cache_read_input_token_cost_priority": 5e-7,
+  "input_cost_per_token": 0.0000025,
+  "input_cost_per_token_above_272k_tokens": 0.000005,
+  "input_cost_per_token_priority": 0.000005,
+  "output_cost_per_token": 0.000015,
+  "output_cost_per_token_above_272k_tokens": 0.0000225,
+  "output_cost_per_token_priority": 0.00003,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-2026-03-05": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 5e-7,
+  "cache_read_input_token_cost_priority": 5e-7,
+  "input_cost_per_token": 0.0000025,
+  "input_cost_per_token_above_272k_tokens": 0.000005,
+  "input_cost_per_token_priority": 0.000005,
+  "output_cost_per_token": 0.000015,
+  "output_cost_per_token_above_272k_tokens": 0.0000225,
+  "output_cost_per_token_priority": 0.00003,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00003,
+  "input_cost_per_token_above_272k_tokens": 0.00006,
+  "output_cost_per_token": 0.00018,
+  "output_cost_per_token_above_272k_tokens": 0.00027,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-pro-2026-03-05": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00003,
+  "input_cost_per_token_above_272k_tokens": 0.00006,
+  "output_cost_per_token": 0.00018,
+  "output_cost_per_token_above_272k_tokens": 0.00027,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 7.5e-8,
+  "cache_read_input_token_cost_priority": 1.5e-7,
+  "input_cost_per_token": 7.5e-7,
+  "input_cost_per_token_priority": 0.0000015,
+  "output_cost_per_token": 0.0000045,
+  "output_cost_per_token_priority": 0.000009,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-mini-2026-03-17": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 7.5e-8,
+  "cache_read_input_token_cost_priority": 1.5e-7,
+  "input_cost_per_token": 7.5e-7,
+  "input_cost_per_token_priority": 0.0000015,
+  "output_cost_per_token": 0.0000045,
+  "output_cost_per_token_priority": 0.000009,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-nano": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2e-8,
+  "input_cost_per_token": 2e-7,
+  "output_cost_per_token": 0.00000125,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.4-nano-2026-03-17": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2e-8,
+  "input_cost_per_token": 2e-7,
+  "output_cost_per_token": 0.00000125,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.000015,
+  "output_cost_per_token": 0.00012,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-pro-2025-10-06": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.000015,
+  "output_cost_per_token": 0.00012,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-2025-08-07": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "cache_read_input_token_cost_priority": 2.5e-7,
+  "input_cost_per_token": 0.00000125,
+  "input_cost_per_token_priority": 0.0000025,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_priority": 0.00002,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-chat": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001
+ },
+ "gpt-5-chat-latest": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5-chat-latest"
+ },
+ "gpt-5.3-codex": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 1.75e-7,
+  "cache_read_input_token_cost_priority": 3.5e-7,
+  "input_cost_per_token": 0.00000175,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000014,
+  "output_cost_per_token_priority": 0.000028,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.3-chat-latest": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.75e-7,
+  "input_cost_per_token": 0.00000175,
+  "output_cost_per_token": 0.000014,
+  "source": "https://developers.openai.com/api/docs/models/gpt-5.3-chat-latest"
+ },
+ "gpt-5-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-8,
+  "cache_read_input_token_cost_priority": 4.5e-8,
+  "input_cost_per_token": 2.5e-7,
+  "input_cost_per_token_priority": 4.5e-7,
+  "output_cost_per_token": 0.000002,
+  "output_cost_per_token_priority": 0.0000036,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-mini-2025-08-07": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.5e-8,
+  "cache_read_input_token_cost_priority": 4.5e-8,
+  "input_cost_per_token": 2.5e-7,
+  "input_cost_per_token_priority": 4.5e-7,
+  "output_cost_per_token": 0.000002,
+  "output_cost_per_token_priority": 0.0000036,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-nano": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-9,
+  "input_cost_per_token": 5e-8,
+  "output_cost_per_token": 4e-7,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-nano-2025-08-07": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-9,
+  "input_cost_per_token": 5e-8,
+  "output_cost_per_token": 4e-7,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o1": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.0000075,
+  "input_cost_per_token": 0.000015,
+  "output_cost_per_token": 0.00006,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o1-2024-12-17": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.0000075,
+  "input_cost_per_token": 0.000015,
+  "output_cost_per_token": 0.00006,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o1-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00015,
+  "output_cost_per_token": 0.0006,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o1-pro-2025-03-19": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00015,
+  "output_cost_per_token": 0.0006,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_priority": 8.75e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000008,
+  "output_cost_per_token_priority": 0.000014,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3-deep-research": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 0.0000025,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00004,
+  "source": "https://developers.openai.com/api/docs/models/o3-deep-research"
+ },
+ "o3-deep-research-2025-06-26": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 0.0000025,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00004,
+  "source": "https://developers.openai.com/api/docs/models/o3-deep-research"
+ },
+ "o3-2025-04-16": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "cache_read_input_token_cost_priority": 8.75e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_priority": 0.0000035,
+  "output_cost_per_token": 0.000008,
+  "output_cost_per_token_priority": 0.000014,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5.5e-7,
+  "input_cost_per_token": 0.0000011,
+  "output_cost_per_token": 0.0000044,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3-mini-2025-01-31": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5.5e-7,
+  "input_cost_per_token": 0.0000011,
+  "output_cost_per_token": 0.0000044,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3-pro": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00002,
+  "output_cost_per_token": 0.00008,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o3-pro-2025-06-10": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "input_cost_per_token": 0.00002,
+  "output_cost_per_token": 0.00008,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o4-mini": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.75e-7,
+  "cache_read_input_token_cost_priority": 5e-7,
+  "input_cost_per_token": 0.0000011,
+  "input_cost_per_token_priority": 0.000002,
+  "output_cost_per_token": 0.0000044,
+  "output_cost_per_token_priority": 0.000008,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "o4-mini-deep-research": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000002,
+  "output_cost_per_token": 0.000008,
+  "source": "https://developers.openai.com/api/docs/models/o4-mini-deep-research"
+ },
+ "o4-mini-deep-research-2025-06-26": {
+  "litellm_provider": "openai",
+  "mode": "responses",
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000002,
+  "output_cost_per_token": 0.000008,
+  "source": "https://developers.openai.com/api/docs/models/o4-mini-deep-research"
+ },
+ "o4-mini-2025-04-16": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 2.75e-7,
+  "cache_read_input_token_cost_priority": 5e-7,
+  "input_cost_per_token": 0.0000011,
+  "input_cost_per_token_priority": 0.000002,
+  "output_cost_per_token": 0.0000044,
+  "output_cost_per_token_priority": 0.000008,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-search-api": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5-search-api-2025-10-14": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 1.25e-7,
+  "input_cost_per_token": 0.00000125,
+  "output_cost_per_token": 0.00001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "claude-mythos-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_1hr": 0.00002,
+  "cache_read_input_token_cost": 0.000001,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00005,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-mythos-5-1": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_1hr": 0.00002,
+  "cache_read_input_token_cost": 2.5e-7,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00005,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/pricing"
+ },
+ "claude-mythos-preview": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000125,
+  "cache_creation_input_token_cost_above_1hr": 0.00002,
+  "cache_read_input_token_cost": 0.000001,
+  "input_cost_per_token": 0.00001,
+  "output_cost_per_token": 0.00005,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/about-claude/models/overview"
+ },
+ "gpt-5.5-cyber": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.00000125,
+  "input_cost_per_token": 0.0000125,
+  "output_cost_per_token": 0.000075,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-5.5-cyber-preview": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 0.00000125,
+  "input_cost_per_token": 0.0000125,
+  "output_cost_per_token": 0.000075,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-rosalind-research": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-6.1-sol": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.0000025,
+  "cache_creation_input_token_cost_above_12hr": 0.000005,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00002,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_ultrafast": 0.00006,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_ultrafast": 0.00003,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.000005,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.00001,
+  "cache_creation_input_token_cost_above_272k_tokens_ultrafast": 0.00003,
+  "cache_creation_input_token_cost_priority": 0.000005,
+  "cache_creation_input_token_cost_ultrafast": 0.000015,
+  "cache_read_input_token_cost": 1e-7,
+  "cache_read_input_token_cost_above_272k_tokens": 2e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 4e-7,
+  "cache_read_input_token_cost_above_272k_tokens_ultrafast": 0.0000012,
+  "cache_read_input_token_cost_priority": 2e-7,
+  "cache_read_input_token_cost_ultrafast": 6e-7,
+  "input_cost_per_token": 0.000002,
+  "input_cost_per_token_above_272k_tokens": 0.000004,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000008,
+  "input_cost_per_token_above_272k_tokens_ultrafast": 0.000024,
+  "input_cost_per_token_priority": 0.000004,
+  "input_cost_per_token_ultrafast": 0.000012,
+  "output_cost_per_token": 0.00001,
+  "output_cost_per_token_above_272k_tokens": 0.000015,
+  "output_cost_per_token_above_272k_tokens_priority": 0.00003,
+  "output_cost_per_token_above_272k_tokens_ultrafast": 0.00009,
+  "output_cost_per_token_priority": 0.00002,
+  "output_cost_per_token_ultrafast": 0.00006,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "claude-haiku-5-5": {
+  "litellm_provider": "anthropic",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 1.25e-7,
+  "cache_creation_input_token_cost_above_1hr": 2e-7,
+  "cache_read_input_token_cost": 1e-8,
+  "input_cost_per_token": 1e-7,
+  "output_cost_per_token": 5e-7,
+  "input_cost_per_token_above_100k_tokens": 5e-7,
+  "output_cost_per_token_above_100k_tokens": 0.0000025,
+  "cache_creation_input_token_cost_above_100k_tokens": 6.25e-7,
+  "cache_creation_input_token_cost_above_1hr_above_100k_tokens": 0.000001,
+  "cache_read_input_token_cost_above_100k_tokens": 5e-8,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "provider_specific_entry": {
+   "us": 1.1
+  },
+  "source": "https://platform.claude.com/docs/en/models/haiku-5-5/overview"
+ },
+ "gpt-rosalind-discovery": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_read_input_token_cost": 5e-7,
+  "input_cost_per_token": 0.000005,
+  "output_cost_per_token": 0.000025,
+  "source": "https://developers.openai.com/api/docs/pricing"
+ },
+ "gpt-6.1-terra": {
+  "litellm_provider": "openai",
+  "mode": "chat",
+  "cache_creation_input_token_cost": 0.00000125,
+  "cache_creation_input_token_cost_above_12hr": 0.0000025,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens": 0.000005,
+  "cache_creation_input_token_cost_above_12hr_above_272k_tokens_priority": 0.00001,
+  "cache_creation_input_token_cost_above_12hr_priority": 0.000005,
+  "cache_creation_input_token_cost_above_272k_tokens": 0.0000025,
+  "cache_creation_input_token_cost_above_272k_tokens_priority": 0.000005,
+  "cache_creation_input_token_cost_priority": 0.0000025,
+  "cache_read_input_token_cost": 5e-8,
+  "cache_read_input_token_cost_above_272k_tokens": 1e-7,
+  "cache_read_input_token_cost_above_272k_tokens_priority": 2e-7,
+  "cache_read_input_token_cost_priority": 1e-7,
+  "input_cost_per_token": 0.000001,
+  "input_cost_per_token_above_272k_tokens": 0.000002,
+  "input_cost_per_token_above_272k_tokens_priority": 0.000004,
+  "input_cost_per_token_priority": 0.000002,
+  "output_cost_per_token": 0.000005,
+  "output_cost_per_token_above_272k_tokens": 0.0000075,
+  "output_cost_per_token_above_272k_tokens_priority": 0.000015,
+  "output_cost_per_token_priority": 0.00001,
+  "search_context_cost_per_query": {
+   "search_context_size_high": 0.01,
+   "search_context_size_low": 0.01,
+   "search_context_size_medium": 0.01
+  },
+  "source": "https://developers.openai.com/api/docs/pricing"
+ }
+}

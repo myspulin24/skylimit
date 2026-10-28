@@ -1,0 +1,436 @@
+//! The data contract between the core and the UI.
+//!
+//! Mirrors `docs/snapshot-contract.md` field for field (TypeScript twin:
+//! `src/types.ts`). Times are Unix epoch seconds, `*Usd` fields are US
+//! dollars, `display*` fields are already in the display currency.
+//! Nothing in here may ever carry a token, a header or message text.
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Provider {
+    Claude,
+    Codex,
+}
+
+impl Provider {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Provider::Claude => "claude",
+            Provider::Codex => "codex",
+        }
+    }
+}
+
+/// Freshness of one limit window.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WindowState {
+    Known,
+    Stale,
+    Unknown,
+    AfterReset,
+}
+
+/// Governing state of a provider's limits. `Off` = deliberately disabled.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum LimitsState {
+    Known,
+    Stale,
+    Unknown,
+    Off,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WindowKind {
+    #[serde(rename = "5h")]
+    FiveHour,
+    #[serde(rename = "week")]
+    Week,
+    #[serde(rename = "weekModel")]
+    WeekModel,
+    #[serde(rename = "other")]
+    Other,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct LimitWindow {
+    pub kind: WindowKind,
+    pub label: String,
+    pub percent: Option<f64>,
+    pub resets_at: Option<i64>,
+    pub fetched_at: Option<i64>,
+    pub state: WindowState,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderLimits {
+    pub provider: Provider,
+    pub state: LimitsState,
+    pub governing: Option<f64>,
+    pub windows: Vec<LimitWindow>,
+    pub note: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ScoreState {
+    Ok,
+    Estimate,
+    Partial,
+    Unknown,
+    FormatChanged,
+    Off,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderScore {
+    pub provider: Provider,
+    pub usd: f64,
+    pub display: f64,
+    pub tokens: u64,
+    pub unpriced_tokens: u64,
+    pub state: ScoreState,
+    pub plan_monthly_display: Option<f64>,
+    pub multiple: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Mood {
+    Confused,
+    Dozing,
+    Panic,
+    Sweat,
+    Celebrate,
+    Focus,
+    Sleep,
+    Calm,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BreakdownRow {
+    pub key: String,
+    pub usd: f64,
+    pub display: f64,
+    pub tokens: u64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Currency {
+    #[serde(rename = "EUR")]
+    Eur,
+    #[serde(rename = "CZK")]
+    Czk,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Total {
+    pub display: f64,
+    pub multiple: Option<f64>,
+    pub plan_monthly_display: Option<f64>,
+    pub excluded_note: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderMood {
+    pub provider: Provider,
+    pub mood: Mood,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum Tray {
+    Green,
+    Orange,
+    Red,
+    GreenDim,
+    OrangeDim,
+    RedDim,
+    Grey,
+    Mono,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DailyRow {
+    pub date: String,
+    pub claude_display: f64,
+    pub codex_display: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Streak {
+    pub provider: Provider,
+    pub current: u32,
+    pub longest: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Backfill {
+    pub done: bool,
+    pub files_done: u32,
+    pub files_total: u32,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CelebrationWho {
+    Claude,
+    Codex,
+    Both,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Celebration {
+    pub id: String,
+    pub who: CelebrationWho,
+    pub text: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Snapshot {
+    pub generated_at: i64,
+    pub month: String,
+    pub currency: Currency,
+    pub limits: Vec<ProviderLimits>,
+    pub scores: Vec<ProviderScore>,
+    pub total: Total,
+    pub moods: Vec<ProviderMood>,
+    pub tray: Tray,
+    pub daily: Vec<DailyRow>,
+    pub by_source: Vec<BreakdownRow>,
+    pub by_model: Vec<BreakdownRow>,
+    pub by_project: Vec<BreakdownRow>,
+    pub streaks: Vec<Streak>,
+    pub backfill: Backfill,
+    pub celebration: Option<Celebration>,
+    pub updated_ago_sec: i64,
+    /// Widget background transparency in percent, from settings (display only).
+    pub widget_transparency: u8,
+}
+
+impl Snapshot {
+    /// Snapshot shown before the core has computed anything.
+    pub fn empty(now: i64, currency: Currency) -> Self {
+        Snapshot {
+            generated_at: now,
+            month: String::new(),
+            currency,
+            limits: Vec::new(),
+            scores: Vec::new(),
+            total: Total {
+                display: 0.0,
+                multiple: None,
+                plan_monthly_display: None,
+                excluded_note: None,
+            },
+            moods: Vec::new(),
+            tray: Tray::Grey,
+            daily: Vec::new(),
+            by_source: Vec::new(),
+            by_model: Vec::new(),
+            by_project: Vec::new(),
+            streaks: Vec::new(),
+            backfill: Backfill {
+                done: false,
+                files_done: 0,
+                files_total: 0,
+            },
+            celebration: None,
+            updated_ago_sec: 0,
+            widget_transparency: 0,
+        }
+    }
+
+    pub fn limits_for(&self, provider: Provider) -> Option<&ProviderLimits> {
+        self.limits.iter().find(|l| l.provider == provider)
+    }
+
+    pub fn score_for(&self, provider: Provider) -> Option<&ProviderScore> {
+        self.scores.iter().find(|s| s.provider == provider)
+    }
+
+    pub fn mood_for(&self, provider: Provider) -> Option<Mood> {
+        self.moods
+            .iter()
+            .find(|m| m.provider == provider)
+            .map(|m| m.mood)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum PlanCurrency {
+    #[serde(rename = "EUR")]
+    Eur,
+    #[serde(rename = "CZK")]
+    Czk,
+    #[serde(rename = "USD")]
+    Usd,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum PlanPeriod {
+    Month,
+    Year,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PlanSetting {
+    pub amount: f64,
+    pub currency: PlanCurrency,
+    pub period: PlanPeriod,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Plans {
+    pub claude: Option<PlanSetting>,
+    pub codex: Option<PlanSetting>,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Settings {
+    pub currency: Currency,
+    pub plans: Plans,
+    pub codex_estimate_in_score: bool,
+    pub excluded_entrypoints: Vec<String>,
+    pub click_through: bool,
+    /// Widget background transparency in percent, 0..=WIDGET_TRANSPARENCY_MAX.
+    pub widget_transparency: u8,
+}
+
+/// Above this the panel would vanish and the text lose its backdrop.
+pub const WIDGET_TRANSPARENCY_MAX: u8 = 90;
+
+impl Default for Settings {
+    fn default() -> Self {
+        Settings {
+            currency: Currency::Eur,
+            plans: Plans::default(),
+            codex_estimate_in_score: true,
+            excluded_entrypoints: Vec::new(),
+            click_through: false,
+            widget_transparency: 0,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn settings_default_matches_contract() {
+        let value = serde_json::to_value(Settings::default()).unwrap();
+        assert_eq!(
+            value,
+            json!({
+                "currency": "EUR",
+                "plans": { "claude": null, "codex": null },
+                "codexEstimateInScore": true,
+                "excludedEntrypoints": [],
+                "clickThrough": false,
+                "widgetTransparency": 0
+            })
+        );
+    }
+
+    #[test]
+    fn snapshot_uses_contract_field_names() {
+        let mut snap = Snapshot::empty(10, Currency::Czk);
+        snap.limits.push(ProviderLimits {
+            provider: Provider::Codex,
+            state: LimitsState::Stale,
+            governing: Some(40.0),
+            windows: vec![LimitWindow {
+                kind: WindowKind::FiveHour,
+                label: "5h".into(),
+                percent: None,
+                resets_at: Some(5),
+                fetched_at: Some(1),
+                state: WindowState::AfterReset,
+            }],
+            note: None,
+        });
+        snap.scores.push(ProviderScore {
+            provider: Provider::Claude,
+            usd: 1.0,
+            display: 2.0,
+            tokens: 3,
+            unpriced_tokens: 4,
+            state: ScoreState::FormatChanged,
+            plan_monthly_display: None,
+            multiple: None,
+        });
+        snap.celebration = Some(Celebration {
+            id: "x".into(),
+            who: CelebrationWho::Both,
+            text: "t".into(),
+        });
+        snap.tray = Tray::OrangeDim;
+        let v = serde_json::to_value(&snap).unwrap();
+        for key in [
+            "generatedAt",
+            "month",
+            "currency",
+            "limits",
+            "scores",
+            "total",
+            "moods",
+            "tray",
+            "daily",
+            "bySource",
+            "byModel",
+            "byProject",
+            "streaks",
+            "backfill",
+            "celebration",
+            "updatedAgoSec",
+        ] {
+            assert!(v.get(key).is_some(), "missing {key}");
+        }
+        assert_eq!(v["currency"], "CZK");
+        assert_eq!(v["tray"], "orangeDim");
+        assert_eq!(v["limits"][0]["windows"][0]["kind"], "5h");
+        assert_eq!(v["limits"][0]["windows"][0]["state"], "afterReset");
+        assert_eq!(v["limits"][0]["windows"][0]["resetsAt"], 5);
+        assert_eq!(v["limits"][0]["windows"][0]["fetchedAt"], 1);
+        assert_eq!(v["scores"][0]["state"], "formatChanged");
+        assert_eq!(v["scores"][0]["unpricedTokens"], 4);
+        assert!(v["scores"][0]["planMonthlyDisplay"].is_null());
+        assert!(v["total"].get("excludedNote").is_some());
+        assert!(v["total"].get("planMonthlyDisplay").is_some());
+        assert_eq!(v["backfill"]["filesDone"], 0);
+        assert_eq!(v["backfill"]["filesTotal"], 0);
+        assert_eq!(v["celebration"]["who"], "both");
+        // Round trip.
+        let back: Snapshot = serde_json::from_value(v).unwrap();
+        assert_eq!(back, snap);
+    }
+
+    #[test]
+    fn plan_setting_wire_format() {
+        let p: PlanSetting =
+            serde_json::from_value(json!({"amount": 540, "currency": "USD", "period": "year"}))
+                .unwrap();
+        assert_eq!(p.currency, PlanCurrency::Usd);
+        assert_eq!(p.period, PlanPeriod::Year);
+    }
+}

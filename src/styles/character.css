@@ -1,0 +1,758 @@
+/*
+ * Mascot moods. Everything that moves uses transform or opacity only, so the
+ * compositor does the work and the idle widget stays under 1 % CPU.
+ * Visibility of face parts: `.v` starts hidden, the mood class reveals parts.
+ * Static fallbacks (tilt, lean) are plain transforms, so reduced motion still
+ * shows the pose without the motion.
+ */
+
+.mascot {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.mascot .v {
+  opacity: 0;
+  transition: opacity 0.28s ease;
+}
+
+.mascot .creature,
+.mascot .body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  transition: transform 0.4s ease;
+}
+
+.mascot .blink,
+.mascot .pupils,
+.mascot .question,
+.mascot .sparkle,
+.mascot .coin,
+.mascot .shadow {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+}
+
+.mascot .arm {
+  transform-box: fill-box;
+  transform-origin: 50% 0%;
+}
+
+.mascot .term-line {
+  transform-box: fill-box;
+  transform-origin: 0% 50%;
+}
+
+.mascot .cheeks {
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.mascot .coin,
+.mascot .screen-flash,
+.mascot .screen-dim {
+  opacity: 0;
+}
+
+.mascot .steam {
+  opacity: 0;
+  transition: opacity 0.4s ease;
+}
+
+.mascot .screen-dim {
+  transition: opacity 0.6s ease;
+}
+
+/* ---------- which parts belong to which mood ---------- */
+
+.mood-calm .eyes-open,
+.mood-calm .mouth-smile,
+.mood-focus .eyes-open,
+.mood-focus .mouth-focus,
+.mood-sweat .eyes-open,
+.mood-sweat .brows-worried,
+.mood-sweat .mouth-wobble,
+.mood-sweat .sweat,
+.mood-panic .eyes-wide,
+.mood-panic .brows-worried,
+.mood-panic .mouth-o,
+.mood-panic .sweat,
+.mood-celebrate .eyes-happy,
+.mood-celebrate .mouth-grin,
+.mood-celebrate .sparkles,
+.mood-dozing .eyes-half,
+.mood-dozing .mouth-flat,
+.mood-dozing .zzz,
+.mood-sleep .eyes-closed,
+.mood-sleep .mouth-sleep,
+.mood-sleep .zzz,
+.mood-confused .eyes-open,
+.mood-confused .brows-confused,
+.mood-confused .mouth-squiggle,
+.mood-confused .question {
+  opacity: 1;
+}
+
+.mood-dozing .z2,
+.mood-dozing .z3 {
+  opacity: 0;
+}
+
+.mood-calm .steam,
+.mood-focus .steam {
+  opacity: 1;
+}
+
+.mood-celebrate .cheeks {
+  opacity: 0.9;
+}
+
+.mood-sleep .cheeks,
+.mood-dozing .cheeks {
+  opacity: 0.3;
+}
+
+.mood-dozing .screen-dim {
+  opacity: 0.45;
+}
+
+.mood-sleep .screen-dim {
+  opacity: 0.82;
+}
+
+/* static poses (also the reduced-motion look) */
+.mood-confused .creature {
+  transform: rotate(-8deg);
+}
+
+.mood-sleep .creature {
+  transform: rotate(5deg);
+}
+
+.mood-dozing .creature {
+  transform: rotate(2deg);
+}
+
+/* ---------- calm: slow breathing, an occasional blink ---------- */
+
+.mood-calm .body {
+  animation: breathe 4.6s ease-in-out infinite;
+}
+
+.mood-calm .blink,
+.mood-focus .blink,
+.mood-sweat .blink,
+.mood-confused .blink {
+  animation: blink 5.2s ease-in-out infinite;
+}
+
+.mood-calm .beads-2 {
+  animation: slide-b 7s ease-in-out infinite;
+}
+
+.mood-calm .steam-1,
+.mood-focus .steam-1 {
+  animation: steam 3.2s ease-out infinite;
+}
+
+.mood-calm .steam-2,
+.mood-focus .steam-2 {
+  animation: steam 3.2s ease-out 1.5s infinite;
+}
+
+/* ---------- focus: busy abacus / typing ---------- */
+
+.mood-focus .body {
+  animation: breathe 2.6s ease-in-out infinite;
+}
+
+.mood-focus .beads-1 {
+  animation: slide-a 1.1s ease-in-out infinite;
+}
+
+.mood-focus .beads-2 {
+  animation: slide-b 1.5s ease-in-out 0.3s infinite;
+}
+
+.mood-focus .beads-3 {
+  animation: slide-c 0.9s ease-in-out 0.15s infinite;
+}
+
+.mood-focus .arm-r {
+  animation: flick 0.55s ease-in-out infinite;
+}
+
+.mood-focus .coin-1 {
+  animation: coin-pop 2.1s ease-out infinite;
+}
+
+.mood-focus .coin-2 {
+  animation: coin-pop 2.1s ease-out 0.7s infinite;
+}
+
+.mood-focus .coin-3 {
+  animation: coin-pop 2.1s ease-out 1.4s infinite;
+}
+
+.mood-focus .hand-l {
+  animation: type 0.34s ease-in-out infinite;
+}
+
+.mood-focus .hand-r {
+  animation: type 0.34s ease-in-out 0.17s infinite;
+}
+
+.mood-focus .term-line-1 {
+  animation: typeline 2.4s steps(7, end) infinite;
+}
+
+.mood-focus .term-line-2 {
+  animation: typeline 2.4s steps(9, end) 0.8s infinite;
+}
+
+.mood-focus .term-line-3 {
+  animation: typeline 2.4s steps(5, end) 1.6s infinite;
+}
+
+.mood-focus .antenna-bulb {
+  animation: glow 1.2s ease-in-out infinite;
+}
+
+/* ---------- sweat: faster everything, drops ---------- */
+
+.mood-sweat .creature {
+  animation: wobble 1.5s ease-in-out infinite;
+}
+
+.mood-sweat .body {
+  animation: breathe 1.7s ease-in-out infinite;
+}
+
+.mood-sweat .beads-1 {
+  animation: slide-a 0.6s ease-in-out infinite;
+}
+
+.mood-sweat .beads-2 {
+  animation: slide-b 0.75s ease-in-out 0.2s infinite;
+}
+
+.mood-sweat .beads-3 {
+  animation: slide-c 0.5s ease-in-out 0.1s infinite;
+}
+
+.mood-sweat .arm-r {
+  animation: flick 0.32s ease-in-out infinite;
+}
+
+.mood-sweat .coin-1 {
+  animation: coin-pop 1.2s ease-out infinite;
+}
+
+.mood-sweat .coin-2 {
+  animation: coin-pop 1.2s ease-out 0.4s infinite;
+}
+
+.mood-sweat .coin-3 {
+  animation: coin-pop 1.2s ease-out 0.8s infinite;
+}
+
+.mood-sweat .hand-l {
+  animation: type 0.22s ease-in-out infinite;
+}
+
+.mood-sweat .hand-r {
+  animation: type 0.22s ease-in-out 0.11s infinite;
+}
+
+.mood-sweat .term-line-1 {
+  animation: typeline 1.3s steps(7, end) infinite;
+}
+
+.mood-sweat .term-line-2 {
+  animation: typeline 1.3s steps(9, end) 0.4s infinite;
+}
+
+.mood-sweat .term-line-3 {
+  animation: typeline 1.3s steps(5, end) 0.8s infinite;
+}
+
+.mood-sweat .drop-1 {
+  animation: drop 1.3s ease-in infinite;
+}
+
+.mood-sweat .drop-2 {
+  animation: drop 1.3s ease-in 0.65s infinite;
+}
+
+/* ---------- panic: shaking, wide eyes, red screen ---------- */
+
+.mood-panic .creature {
+  animation: shake 0.24s linear infinite;
+}
+
+.mood-panic .body {
+  animation: breathe 0.9s ease-in-out infinite;
+}
+
+.mood-panic .pupils {
+  animation: jitter 0.3s linear infinite;
+}
+
+.mood-panic .beads-1 {
+  animation: slide-a 0.3s ease-in-out infinite;
+}
+
+.mood-panic .beads-2 {
+  animation: slide-b 0.38s ease-in-out infinite;
+}
+
+.mood-panic .beads-3 {
+  animation: slide-c 0.26s ease-in-out infinite;
+}
+
+.mood-panic .arm-l {
+  animation: flick-l 0.26s ease-in-out infinite;
+}
+
+.mood-panic .arm-r {
+  animation: flick 0.22s ease-in-out infinite;
+}
+
+.mood-panic .hand-l {
+  animation: type 0.14s ease-in-out infinite;
+}
+
+.mood-panic .hand-r {
+  animation: type 0.14s ease-in-out 0.07s infinite;
+}
+
+.mood-panic .drop-1 {
+  animation: drop 0.7s ease-in infinite;
+}
+
+.mood-panic .drop-2 {
+  animation: drop 0.7s ease-in 0.35s infinite;
+}
+
+.mood-panic .screen-flash {
+  animation: flash 0.6s ease-in-out infinite;
+}
+
+/* ---------- celebrate: jump and sparkle ---------- */
+
+.mood-celebrate .creature {
+  animation: jump 0.95s ease-in-out infinite;
+}
+
+.mood-celebrate .shadow {
+  animation: shadow-jump 0.95s ease-in-out infinite;
+}
+
+.mood-celebrate .sparkle-1 {
+  animation: twinkle 1s ease-in-out infinite;
+}
+
+.mood-celebrate .sparkle-2 {
+  animation: twinkle 1s ease-in-out 0.25s infinite;
+}
+
+.mood-celebrate .sparkle-3 {
+  animation: twinkle 1s ease-in-out 0.5s infinite;
+}
+
+.mood-celebrate .sparkle-4 {
+  animation: twinkle 1s ease-in-out 0.75s infinite;
+}
+
+.mood-celebrate .coin-1 {
+  animation: coin-pop 1s ease-out infinite;
+}
+
+.mood-celebrate .coin-2 {
+  animation: coin-pop 1s ease-out 0.33s infinite;
+}
+
+.mood-celebrate .coin-3 {
+  animation: coin-pop 1s ease-out 0.66s infinite;
+}
+
+.mood-celebrate .arm-l {
+  animation: flick-l 0.48s ease-in-out infinite;
+}
+
+.mood-celebrate .arm-r {
+  animation: flick 0.48s ease-in-out infinite;
+}
+
+.mood-celebrate .hand-l {
+  animation: wave 0.48s ease-in-out infinite;
+}
+
+.mood-celebrate .hand-r {
+  animation: wave 0.48s ease-in-out 0.24s infinite;
+}
+
+/* ---------- dozing: heavy lids, one small z ---------- */
+
+.mood-dozing .creature {
+  animation: sway 6.5s ease-in-out infinite;
+}
+
+.mood-dozing .body {
+  animation: breathe 5.4s ease-in-out infinite;
+}
+
+.mood-dozing .z1 {
+  animation: zfloat 3.6s ease-out infinite;
+}
+
+/* ---------- sleep: closed eyes, zzz, slow breathing ---------- */
+
+.mood-sleep .body {
+  animation: breathe-deep 6s ease-in-out infinite;
+}
+
+.mood-sleep .z1 {
+  animation: zfloat 3.6s ease-out infinite;
+}
+
+.mood-sleep .z2 {
+  animation: zfloat 3.6s ease-out 1.2s infinite;
+}
+
+.mood-sleep .z3 {
+  animation: zfloat 3.6s ease-out 2.4s infinite;
+}
+
+/* ---------- confused: tilted head, bobbing "?" ---------- */
+
+.mood-confused .creature {
+  animation: tilt 3.4s ease-in-out infinite;
+}
+
+.mood-confused .question {
+  animation: bob 1.8s ease-in-out infinite;
+}
+
+/* the terminal cursor blinks unless the creature sleeps */
+.mascot-codex:not(.mood-sleep):not(.mood-dozing) .cursor {
+  animation: cursor 1.1s steps(1, end) infinite;
+}
+
+/* ---------- keyframes (transform / opacity only) ---------- */
+
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.015, 1.035);
+  }
+}
+
+@keyframes breathe-deep {
+  0%,
+  100% {
+    transform: scale(1, 1);
+  }
+  50% {
+    transform: scale(1.03, 1.055);
+  }
+}
+
+@keyframes blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.12);
+  }
+}
+
+@keyframes slide-a {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+}
+
+@keyframes slide-b {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(22px);
+  }
+}
+
+@keyframes slide-c {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(9px);
+  }
+}
+
+@keyframes flick {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-9deg);
+  }
+}
+
+@keyframes flick-l {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(9deg);
+  }
+}
+
+@keyframes coin-pop {
+  0% {
+    transform: translateY(4px) scale(0.6);
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-36px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes type {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2.2px);
+  }
+}
+
+@keyframes typeline {
+  0% {
+    transform: scaleX(0);
+  }
+  55%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes glow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes steam {
+  0% {
+    transform: translateY(3px);
+    opacity: 0;
+  }
+  40% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-7px);
+    opacity: 0;
+  }
+}
+
+@keyframes wobble {
+  0%,
+  100% {
+    transform: rotate(-1.6deg);
+  }
+  50% {
+    transform: rotate(1.6deg);
+  }
+}
+
+@keyframes drop {
+  0% {
+    transform: translateY(-2px);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+}
+
+@keyframes shake {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-1.8px) rotate(-1.2deg);
+  }
+  75% {
+    transform: translateX(1.8px) rotate(1.2deg);
+  }
+}
+
+@keyframes jitter {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  33% {
+    transform: translate(0.8px, -0.5px);
+  }
+  66% {
+    transform: translate(-0.8px, 0.4px);
+  }
+}
+
+@keyframes flash {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes jump {
+  0%,
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+  14% {
+    transform: translateY(0) scale(1.06, 0.92);
+  }
+  42% {
+    transform: translateY(-13px) scale(0.96, 1.05);
+  }
+  64% {
+    transform: translateY(0) scale(1.04, 0.95);
+  }
+  78% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+@keyframes shadow-jump {
+  0%,
+  64%,
+  100% {
+    transform: scaleX(1);
+    opacity: 0.28;
+  }
+  42% {
+    transform: scaleX(0.72);
+    opacity: 0.14;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    transform: scale(0.4) rotate(0deg);
+    opacity: 0.25;
+  }
+  50% {
+    transform: scale(1.15) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@keyframes wave {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-13px);
+  }
+}
+
+@keyframes sway {
+  0%,
+  100% {
+    transform: rotate(-1.5deg) translateY(0);
+  }
+  50% {
+    transform: rotate(3deg) translateY(1px);
+  }
+}
+
+@keyframes zfloat {
+  0% {
+    transform: translate(0, 4px);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(7px, -9px);
+    opacity: 0;
+  }
+}
+
+@keyframes tilt {
+  0%,
+  100% {
+    transform: rotate(-8deg);
+  }
+  50% {
+    transform: rotate(-4.5deg) translateY(-1px);
+  }
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-7deg);
+  }
+  50% {
+    transform: translateY(-3px) rotate(7deg);
+  }
+}
+
+@keyframes cursor {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot,
+  .mascot * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

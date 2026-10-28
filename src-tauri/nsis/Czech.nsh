@@ -1,0 +1,32 @@
+; Czech strings for the Tauri-specific parts of the NSIS installer.
+;
+; NSIS ships a Czech translation of the standard wizard pages; the prompts
+; Tauri adds on top (WebView2, upgrades, running app) are provided here.
+
+LangString addOrReinstall ${LANG_CZECH} "Přidat nebo přeinstalovat součásti"
+LangString alreadyInstalled ${LANG_CZECH} "Již nainstalováno"
+LangString alreadyInstalledLong ${LANG_CZECH} "${PRODUCTNAME} ${VERSION} je již nainstalován. Vyberte požadovanou akci a pokračujte tlačítkem Další."
+LangString appRunning ${LANG_CZECH} "Aplikace ${PRODUCTNAME} je spuštěná.$\nZavřete ji a spusťte instalaci znovu."
+LangString appRunningOkKill ${LANG_CZECH} "Aplikace ${PRODUCTNAME} je spuštěná.$\nKlepnutím na OK ji ukončíte."
+LangString chooseMaintenanceOption ${LANG_CZECH} "Vyberte akci údržby"
+LangString choowHowToInstall ${LANG_CZECH} "Vyberte, jak chcete ${PRODUCTNAME} nainstalovat."
+LangString createDesktop ${LANG_CZECH} "Vytvořit zástupce na ploše"
+LangString deleteAppData ${LANG_CZECH} "Smazat i data aplikace (mezipaměť oken; historie ve složce ai-usage-data zůstane)"
+LangString dontUninstall ${LANG_CZECH} "Neodinstalovat"
+LangString dontUninstallDowngrade ${LANG_CZECH} "Neodinstalovat (přechod na starší verzi bez odinstalace není podporován)"
+LangString failedToKillApp ${LANG_CZECH} "Aplikaci ${PRODUCTNAME} se nepodařilo ukončit. Zavřete ji ručně a zkuste to znovu."
+LangString installingWebview2 ${LANG_CZECH} "Instaluje se WebView2…"
+LangString newerVersionInstalled ${LANG_CZECH} "Je již nainstalována novější verze ${PRODUCTNAME}. Instalace starší verze se nedoporučuje. Chcete-li přesto nainstalovat verzi ${VERSION}, nejprve odinstalujte současnou verzi."
+LangString older ${LANG_CZECH} "starší"
+LangString olderOrUnknownVersionInstalled ${LANG_CZECH} "V počítači je nainstalována $R4 verze ${PRODUCTNAME}. Před instalací verze ${VERSION} ji doporučujeme odinstalovat. Vyberte požadovanou akci a pokračujte."
+LangString silentDowngrades ${LANG_CZECH} "Přechod na starší verzi není při tiché instalaci podporován. Spusťte instalátor znovu bez přepínače /S."
+LangString unableToUninstall ${LANG_CZECH} "Odinstalace se nezdařila."
+LangString uninstallApp ${LANG_CZECH} "Odinstalovat ${PRODUCTNAME}"
+LangString uninstallBeforeInstalling ${LANG_CZECH} "Před instalací odinstalovat"
+LangString unknown ${LANG_CZECH} "neznámá"
+LangString webview2AbortError ${LANG_CZECH} "WebView2 se nepodařilo nainstalovat. Bez této komponenty aplikace nepoběží. Spusťte instalátor znovu."
+LangString webview2DownloadError ${LANG_CZECH} "Chyba: stažení WebView2 se nezdařilo – $0"
+LangString webview2DownloadSuccess ${LANG_CZECH} "Instalační program WebView2 byl úspěšně stažen"
+LangString webview2Downloading ${LANG_CZECH} "Stahuje se instalační program WebView2…"
+LangString webview2InstallError ${LANG_CZECH} "Chyba: instalace WebView2 skončila s kódem $1"
+LangString webview2InstallSuccess ${LANG_CZECH} "WebView2 byl úspěšně nainstalován"

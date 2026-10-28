@@ -1,0 +1,79 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "Skylimit",
+  "mainBinaryName": "ai-usage",
+  "version": "0.4.0",
+  "identifier": "cz.myspulin.aiusage",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "macOSPrivateApi": true,
+    "windows": [],
+    "security": {
+      "freezePrototype": true,
+      "csp": {
+        "default-src": "'self'",
+        "script-src": "'self'",
+        "style-src": "'self'",
+        "img-src": "'self' data:",
+        "font-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-src": "'none'"
+      },
+      "devCsp": {
+        "default-src": "'self'",
+        "script-src": "'self' 'unsafe-inline'",
+        "style-src": "'self' 'unsafe-inline'",
+        "img-src": "'self' data:",
+        "font-src": "'self'",
+        "connect-src": "ipc: http://ipc.localhost ws://localhost:1420 http://localhost:1420",
+        "object-src": "'none'",
+        "base-uri": "'none'",
+        "form-action": "'none'",
+        "frame-src": "'none'"
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "publisher": "Michal Jašek",
+    "copyright": "© 2026 Michal Jašek",
+    "category": "Utility",
+    "shortDescription": "Limity a skóre AI předplatného v plovoucím widgetu",
+    "longDescription": "Skylimit ukazuje v malém plovoucím widgetu limity Claude a Codexu a cenu práce s Claude a Codexem v cenách API, porovnanou s předplatným. Data čte jen z tohoto počítače a historii ukládá do %LOCALAPPDATA%\\ai-usage-data.",
+    "macOS": {
+      "signingIdentity": "-",
+      "minimumSystemVersion": "11.0"
+    },
+    "linux": {
+      "deb": {
+        "section": "utils"
+      }
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["Czech"],
+        "displayLanguageSelector": false,
+        "customLanguageFiles": {
+          "Czech": "nsis/Czech.nsh"
+        }
+      }
+    }
+  }
+}

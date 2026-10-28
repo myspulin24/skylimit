@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-set-widget-transparency"
+description = "Enables the set_widget_transparency command without any pre-configured scope."
+commands.allow = ["set_widget_transparency"]
+
+[[permission]]
+identifier = "deny-set-widget-transparency"
+description = "Denies the set_widget_transparency command without any pre-configured scope."
+commands.deny = ["set_widget_transparency"]

@@ -1,0 +1,14 @@
+{
+  "id": 5,
+  "result": {
+    "summary": {
+      "lifetimeTokens": null,
+      "peakDailyTokens": null,
+      "longestRunningTurnSec": null,
+      "currentStreakDays": null,
+      "longestStreakDays": null
+    },
+    "dailyUsageBuckets": null,
+    "threadUsage": null
+  }
+}

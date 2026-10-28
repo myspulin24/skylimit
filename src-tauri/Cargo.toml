@@ -1,0 +1,35 @@
+[package]
+name = "ai-usage"
+version = "0.4.0"
+description = "AI Usage – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+publish = false
+default-run = "ai-usage"
+
+[lib]
+name = "ai_usage_lib"
+# Windows-only desktop app: no mobile static/dynamic library targets.
+crate-type = ["rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+usage-core.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+# macos-private-api: a transparent window on macOS needs it (the widget).
+tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
+tauri-plugin-single-instance = "2"
+# Feedback goes to the Worker over HTTPS (same stack as the core's ČNB fetch).
+reqwest.workspace = true
+rustls.workspace = true
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+
+[features]
+# Enabled by `tauri build`: the frontend is served from the bundle, not devUrl.
+custom-protocol = ["tauri/custom-protocol"]

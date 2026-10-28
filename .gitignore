@@ -1,0 +1,36 @@
+# Dependencies and build output
+node_modules/
+dist/
+target/
+src-tauri/gen/
+coverage/
+
+# Secrets and local config: never commit these
+.env
+.env.*
+*.key
+*.pfx
+*.p12
+feedback/.dev.vars
+feedback/.wrangler/
+
+# Local data (the history database lives in %LOCALAPPDATA%\ai-usage-data,
+# never in the repository, but be explicit)
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+
+# Private working notes: kept on the author's machine, not published
+CLAUDE.md
+TODOS.md
+docs/designs/
+docs/screenshots/
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+npm-debug.log*

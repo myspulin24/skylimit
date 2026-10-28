@@ -1,0 +1,75 @@
+# Testy na každý push a pull request.
+#
+# Sestavení instalátorů tady schválně není, to patří do `release.yml` a trvá
+# řádově déle. Tohle odpovídá na otázku: je repozitář zelený na všech třech
+# systémech?
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Celá sada na Windows, kde Skylimit vznikal: rozhraní, Worker, skripty,
+  # jádro (i spouštění Codexu v Job Objectu) a shell.
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - name: Testy
+        run: npm test
+
+  # macOS a Linux: přeloží se shell (s průhledným oknem, ikonou a cestami
+  # těchto systémů) a projdou testy jádra a shellu?
+  unix:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-22.04, macos-latest]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Systémové balíčky (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      # `generate_context!` vkládá rozhraní z `dist/` do binárky, takže musí existovat.
+      - name: Rozhraní
+        run: npm run build
+
+      - name: Testy jádra a shellu
+        run: cargo test -p usage-core -p ai-usage

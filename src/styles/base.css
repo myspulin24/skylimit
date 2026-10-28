@@ -1,0 +1,138 @@
+/* Design tokens and shared basics for both windows. */
+
+:root {
+  color-scheme: dark;
+
+  --font-ui: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  /* text inks, never series colors */
+  --ink-1: #eef1f5;
+  --ink-2: #b9c0cc;
+  --ink-3: #8a93a2;
+  --ink-4: #5f6777;
+
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.13);
+  --fill-soft: rgba(255, 255, 255, 0.045);
+  --fill-hover: rgba(255, 255, 255, 0.09);
+
+  --surface-0: #111419;
+  --surface-1: #181c23;
+  --surface-2: #20252e;
+
+  /* series identity (validated pair on dark surfaces) */
+  --claude: #d9734e;
+  --codex: #2fa88f;
+
+  /* status, reserved for limits */
+  --ok: #5fb97e;
+  --warn: #e2a645;
+  --crit: #e0645a;
+  --warn-ink: #f3c879;
+
+  --focus-ring: #8fb8ff;
+  --radius-s: 6px;
+  --radius-m: 10px;
+  --radius-l: 14px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-1);
+  /* Transparent until main.tsx marks the window: the widget window is
+     transparent and must not flash an opaque rectangle while JS loads. */
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.dot {
+  display: inline-block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ink-3);
+}
+
+.dot-claude {
+  background: var(--claude);
+}
+
+.dot-codex {
+  background: var(--codex);
+}
+
+.tag {
+  display: inline-block;
+  padding: 0 5px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 15px;
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The widget window is transparent; only its panel paints. */
+html[data-window="widget"],
+html[data-window="widget"] body {
+  background: transparent;
+  overflow: hidden;
+}
+
+html[data-window="gallery"] body {
+  background: var(--surface-0);
+}
+
+/* Hidden window: freeze every animation (see installAnimationPause). */
+html.anim-paused *,
+html.anim-paused *::before,
+html.anim-paused *::after {
+  animation-play-state: paused !important;
+}

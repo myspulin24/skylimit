@@ -1,0 +1,163 @@
+# Vydání nové verze (postup převzatý z Pilcrow).
+#
+# Spustí se na tag `v*` (například `v0.4.0`): projdou testy, založí se koncept
+# vydání s poznámkami z CHANGELOG.md, sestaví se instalátory pro Windows,
+# macOS a Linux a teprve když jsou uvnitř všechny tři, vydání se zveřejní.
+#
+# Tag se vytváří až po zeleném `ci` na stejném commitu.
+
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  # Ruční spuštění, když je potřeba vydání přestavět.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag, ze kterého sestavit (například v0.4.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  # Testy jednou a dřív než cokoli jiného: neprojdou, nevydá se nic.
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: swatinem/rust-cache@v2
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - name: Testy
+        run: npm test
+
+  # Vydání založí jeden job předem, buildy do něj jen nahrávají. Tři souběžné
+  # pokusy založit stejné vydání by skončily `Error saving asset`.
+  #
+  # Zakládá se jako koncept, takže rozestavěné vydání nikdo neuvidí.
+  create-release:
+    needs: test
+    runs-on: ubuntu-22.04
+    outputs:
+      release_id: ${{ steps.create.outputs.id }}
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      # Poznámky se berou z CHANGELOG.md. Když sekce k verzi chybí, skončí to
+      # tady a nic se nevydá.
+      - name: Založit koncept vydání
+        id: create
+        run: |
+          set -eu
+          node scripts/changelog.mjs "${TAG#v}" > /tmp/notes.md
+          cat >> /tmp/notes.md <<'NOTES'
+
+          ---
+
+          Stáhni si instalátor pro svůj systém níž: `.exe` pro Windows, `.dmg`
+          pro Mac (Apple Silicon i Intel), `.AppImage` nebo `.deb` pro Linux.
+          Instalátory nejsou podepsané komerčním certifikátem; jak je poprvé
+          spustit, popisuje [README](https://github.com/myspulin24/skylimit#instalace).
+          NOTES
+          # Opakované spuštění nezaloží druhé vydání: hledá se i mezi koncepty.
+          id=$(gh api "repos/$GITHUB_REPOSITORY/releases" --paginate \
+                 --jq ".[] | select(.tag_name == \"$TAG\") | .id" | head -1 || true)
+          if [ -z "$id" ]; then
+            # Přes API kvůli tomu, že odpověď rovnou obsahuje `id`.
+            id=$(gh api -X POST "repos/$GITHUB_REPOSITORY/releases" \
+                   -f "tag_name=$TAG" \
+                   -f "name=Skylimit ${TAG#v}" \
+                   -F "body=@/tmp/notes.md" \
+                   -F draft=true -F prerelease=false \
+                   --jq .id)
+          fi
+          if [ -z "$id" ]; then
+            echo "Vydání pro $TAG se nepodařilo najít ani založit." >&2
+            exit 1
+          fi
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: [test, create-release]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            args: '--bundles nsis'
+          - platform: macos-latest
+            args: '--target universal-apple-darwin --bundles app,dmg'
+          - platform: ubuntu-22.04
+            args: '--bundles appimage,deb'
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - uses: swatinem/rust-cache@v2
+
+      # Tauri na Linuxu potřebuje webkit2gtk a AppIndicator pro ikonu.
+      - name: Systémové balíčky (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev patchelf
+
+      - name: Instalace závislostí
+        run: npm ci
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Nahrává se do vydání, které už existuje; jméno ani text se tu
+          # neuvádí, o obojí se postaral `create-release`.
+          releaseId: ${{ needs.create-release.outputs.release_id }}
+          args: ${{ matrix.args }}
+
+  # Koncept zveřejnit až ve chvíli, kdy jsou uvnitř všechny tři platformy.
+  publish:
+    needs: [create-release, build]
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Zveřejnit vydání
+        run: |
+          gh api -X PATCH \
+            "repos/$GITHUB_REPOSITORY/releases/${{ needs.create-release.outputs.release_id }}" \
+            -F draft=false -F prerelease=false -f make_latest=true
