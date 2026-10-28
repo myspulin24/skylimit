@@ -1,9 +1,9 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Skylimit",
-  "mainBinaryName": "ai-usage",
-  "version": "0.4.0",
-  "identifier": "cz.myspulin.aiusage",
+  "mainBinaryName": "skylimit",
+  "version": "0.5.0",
+  "identifier": "cz.myspulin.skylimit",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -55,7 +55,7 @@
     "copyright": "© 2026 Michal Jašek",
     "category": "Utility",
     "shortDescription": "Limity a skóre AI předplatného v plovoucím widgetu",
-    "longDescription": "Skylimit ukazuje v malém plovoucím widgetu limity Claude a Codexu a cenu práce s Claude a Codexem v cenách API, porovnanou s předplatným. Data čte jen z tohoto počítače a historii ukládá do %LOCALAPPDATA%\\ai-usage-data.",
+    "longDescription": "Skylimit ukazuje v malém plovoucím widgetu limity Claude a Codexu a cenu práce s Claude a Codexem v cenách API, porovnanou s předplatným. Data čte jen z tohoto počítače a historii ukládá do %LOCALAPPDATA%\\skylimit-data.",
     "macOS": {
       "signingIdentity": "-",
       "minimumSystemVersion": "11.0"
@@ -72,7 +72,8 @@
         "displayLanguageSelector": false,
         "customLanguageFiles": {
           "Czech": "nsis/Czech.nsh"
-        }
+        },
+        "installerHooks": "nsis/hooks.nsh"
       }
     }
   }

@@ -12,6 +12,7 @@ const COMMANDS: &[&str] = &[
     "feedback_status",
     "feedback_send",
     "open_app",
+    "open_feedback",
     "clear_history",
 ];
 

@@ -1,9 +1,13 @@
 //! Where Skylimit keeps its data and how the shell persists settings.
 //!
-//! Everything lives in `%LOCALAPPDATA%\ai-usage-data`. The folder is named
-//! differently from the bundle identifier on purpose: the NSIS uninstaller's
-//! "delete app data" option removes `%LOCALAPPDATA%\<identifier>` and must
-//! never take the usage history with it (decision D4).
+//! Everything lives in `%LOCALAPPDATA%\skylimit-data` (macOS: Application
+//! Support, Linux: `~/.local/share`). The folder is named differently from
+//! the bundle identifier on purpose: the NSIS uninstaller's "delete app data"
+//! option removes `%LOCALAPPDATA%\<identifier>` and must never take the usage
+//! history with it (decision D4).
+//!
+//! Up to 0.4.0 the folder was `ai-usage-data`. The first start of a newer
+//! version moves it over; nothing is copied or deleted.
 
 use std::fs;
 use std::io;
@@ -13,7 +17,27 @@ use serde_json::Value;
 use tauri::{AppHandle, Manager, Runtime};
 use usage_core::Settings;
 
-const DATA_DIR_NAME: &str = "ai-usage-data";
+const DATA_DIR_NAME: &str = "skylimit-data";
+/// Name before the rename to Skylimit (0.1.0–0.4.0).
+const LEGACY_DATA_DIR_NAME: &str = "ai-usage-data";
+
+/// The data folder to use under `local`, moving the pre-0.5.0 one there
+/// first. If the move fails (folder in use, permissions), the old folder
+/// keeps working as it is: history is never left behind or split.
+fn data_root(local: &Path) -> PathBuf {
+    let root = local.join(DATA_DIR_NAME);
+    let legacy = local.join(LEGACY_DATA_DIR_NAME);
+    if root.exists() || !legacy.is_dir() {
+        return root;
+    }
+    match fs::rename(&legacy, &root) {
+        Ok(()) => root,
+        Err(e) => {
+            eprintln!("cannot move {} to {}: {e}; using the old folder", legacy.display(), root.display());
+            legacy
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct DataPaths {
@@ -34,7 +58,7 @@ impl DataPaths {
             .or_else(|| app.path().home_dir().ok())
             .unwrap_or_else(|| PathBuf::from("."));
         DataPaths {
-            root: local.join(DATA_DIR_NAME),
+            root: data_root(&local),
             claude_projects: home.join(".claude").join("projects"),
             t3_logs: home.join(".t3").join("userdata").join("logs").join("provider"),
         }
@@ -113,7 +137,7 @@ mod tests {
     use usage_core::{Currency, PlanCurrency, PlanPeriod, PlanSetting, Plans};
 
     fn temp_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("ai-usage-settings-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("skylimit-settings-{tag}-{}", std::process::id()));
         let _ = fs::remove_dir_all(&dir);
         dir
     }
@@ -163,5 +187,36 @@ mod tests {
         assert_eq!(s.currency, Currency::Czk);
         assert!(!s.click_through);
         assert!(s.codex_estimate_in_score);
+    }
+
+    #[test]
+    fn the_pre_skylimit_data_folder_is_moved_once() {
+        let local = temp_dir("migrate");
+        let legacy = local.join(LEGACY_DATA_DIR_NAME);
+        fs::create_dir_all(legacy.join("diag")).unwrap();
+        fs::write(legacy.join("history.sqlite"), b"history").unwrap();
+        fs::write(legacy.join("settings.json"), br#"{"currency":"CZK"}"#).unwrap();
+
+        let root = data_root(&local);
+        assert_eq!(root, local.join(DATA_DIR_NAME));
+        assert_eq!(fs::read(root.join("history.sqlite")).unwrap(), b"history");
+        assert_eq!(load(&root.join("settings.json")).currency, Currency::Czk);
+        assert!(root.join("diag").is_dir());
+        assert!(!legacy.exists(), "moved, not copied");
+
+        // Later starts (or an old folder that reappears) leave the new one alone.
+        fs::create_dir_all(&legacy).unwrap();
+        assert_eq!(data_root(&local), local.join(DATA_DIR_NAME));
+        assert_eq!(fs::read(root.join("history.sqlite")).unwrap(), b"history");
+        fs::remove_dir_all(&local).unwrap();
+    }
+
+    #[test]
+    fn a_fresh_install_gets_the_new_folder_name() {
+        let local = temp_dir("fresh");
+        fs::create_dir_all(&local).unwrap();
+        assert_eq!(data_root(&local), local.join("skylimit-data"));
+        assert!(!local.join("skylimit-data").exists(), "created later by whoever writes");
+        fs::remove_dir_all(&local).unwrap();
     }
 }

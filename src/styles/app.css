@@ -1205,3 +1205,57 @@ html[data-window="app"] body {
     animation: none;
   }
 }
+
+/* ---------- header pill, about card, footer ---------- */
+
+/* Same height, border and surface as the tab group next to it. */
+.head-pill {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  height: 38px;
+  padding: 0 15px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--fill-soft);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.head-pill:hover {
+  background: var(--fill-hover);
+  color: var(--ink-1);
+}
+
+.head-pill svg,
+.btn.with-icon svg {
+  flex: none;
+}
+
+.btn.with-icon {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  margin-top: 4px;
+}
+
+.about-name {
+  margin: 0 0 4px;
+  font-size: 14px;
+  color: var(--ink-1);
+}
+
+.about-name .num {
+  margin-left: 4px;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+.app-foot {
+  margin-top: 22px;
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--ink-4);
+}

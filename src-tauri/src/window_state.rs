@@ -309,7 +309,7 @@ mod tests {
     }
 
     fn temp_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!("ai-usage-window-{tag}-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("skylimit-window-{tag}-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         dir
     }

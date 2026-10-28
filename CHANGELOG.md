@@ -7,6 +7,24 @@ tady se nesestaví; hlídá to workflow, aby nevyšla verze, u které nikdo nev�
 co přinesla. Píše se pro toho, kdo aplikaci používá: co se změní na obrazovce,
 ne které soubory se upravily.
 
+## 0.5.0 — 2026-10-28
+
+### Přidáno
+
+- **Zpětná vazba z widgetu.** Bublina vedle obnovení a nastavení otevře okno
+  aplikace rovnou s formulářem.
+- **O aplikaci** v Nastavení: verze, copyright a tlačítko pro zpětnou vazbu.
+  Copyright je i v patičce okna.
+
+### Změněno
+
+- **Všude jen Skylimit.** Program se jmenuje `skylimit.exe` (dřív
+  `ai-usage.exe`) a data leží ve složce `skylimit-data`. Historie
+  a nastavení se při prvním spuštění přesunou samy, nic se nekopíruje ani
+  nemaže. Instalátor ukončí případně běžící starou verzi a uklidí po ní
+  starý program i mezipaměť okna.
+- **Tlačítko Zpětná vazba** v okně aplikace vypadá jako záložky vedle něj.
+
 ## 0.4.0 — 2026-10-28
 
 ### Přidáno

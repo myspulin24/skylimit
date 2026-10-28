@@ -53,6 +53,12 @@ export async function refreshUsage(): Promise<void> {
   return (await mock()).refreshUsage();
 }
 
+/** The app window with the feedback dialog open (widget button). */
+export async function openFeedback(): Promise<void> {
+  if (isTauri()) return invoke<void>("open_feedback");
+  return (await mock()).openFeedback();
+}
+
 export async function openApp(): Promise<void> {
   if (isTauri()) return invoke<void>("open_app");
   return (await mock()).openApp();

@@ -30,21 +30,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ai-usage"
-version = "0.4.0"
-dependencies = [
- "reqwest",
- "rustls",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-single-instance",
- "usage-core",
- "windows-sys 0.59.0",
-]
-
-[[package]]
 name = "alloc-no-stdlib"
 version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3471,6 +3456,21 @@ name = "siphasher"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "33f4fe9184a62d842c9ef383018f3306d8ba224fd9d836f56d7288308847c256"
+
+[[package]]
+name = "skylimit"
+version = "0.5.0"
+dependencies = [
+ "reqwest",
+ "rustls",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-single-instance",
+ "usage-core",
+ "windows-sys 0.59.0",
+]
 
 [[package]]
 name = "slab"

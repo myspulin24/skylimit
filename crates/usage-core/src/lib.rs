@@ -1,4 +1,4 @@
-//! usage-core: the runtime behind ai-usage.
+//! usage-core: the runtime behind Skylimit.
 //!
 //! One core thread owns the SQLite connection (WAL) and computes score, moods,
 //! tray color and the [`Snapshot`]. Providers run on their own threads, keep
@@ -124,7 +124,7 @@ pub enum FxSource {
 pub struct Config {
     /// Usually `%USERPROFILE%\.claude\projects`.
     pub claude_projects_dir: PathBuf,
-    /// Usually `%LOCALAPPDATA%\ai-usage-data\history.sqlite` (parents are created).
+    /// Usually `%LOCALAPPDATA%\skylimit-data\history.sqlite` (parents are created).
     pub db_path: PathBuf,
     /// T3 Code's provider logs (`%USERPROFILE%\.t3\userdata\logs\provider`),
     /// the only source of Claude's limits. `None` = Claude limits Off.
@@ -191,7 +191,7 @@ pub(crate) fn http_get_text(url: &str) -> Result<String, String> {
     }
     let client = reqwest::blocking::Client::builder()
         .timeout(Duration::from_secs(20))
-        .user_agent(concat!("ai-usage/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("skylimit/", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| e.to_string())?;
     let resp = client.get(url).send().map_err(|e| e.to_string())?;

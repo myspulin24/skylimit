@@ -19,7 +19,7 @@ fn main() {
         .or_else(|| std::env::var_os("HOME"))
         .map(PathBuf::from)
         .expect("home directory");
-    let tmp = std::env::temp_dir().join("ai-usage-smoke");
+    let tmp = std::env::temp_dir().join("skylimit-smoke");
     let db = args
         .iter()
         .position(|a| a == "--db")

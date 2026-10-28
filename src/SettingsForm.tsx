@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { clearHistory, getSettings, setClickThrough, setSettings, setWidgetTransparency } from "./api";
 import { PROVIDER_NAME, sourceLabel } from "./format";
+import { FeedbackIcon } from "./icons";
 import type { PlanSetting, Provider, Settings, Snapshot } from "./types";
 
 type PlanCurrency = PlanSetting["currency"];
@@ -83,7 +84,7 @@ function toSettings(d: Draft): Settings | { error: string } {
 type Status = { kind: "idle" } | { kind: "saving" } | { kind: "saved" } | { kind: "error"; text: string };
 type ClearState = "idle" | "confirm" | "busy" | "done" | "error";
 
-export function SettingsForm({ snapshot }: { snapshot: Snapshot | null }) {
+export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot | null; onOpenFeedback: () => void }) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -311,6 +312,22 @@ export function SettingsForm({ snapshot }: { snapshot: Snapshot | null }) {
             Průchod kliknutí (widget nereaguje na myš)
           </label>
           <p className="hint">Vypnout jde i z ikony v oznamovací oblasti.</p>
+        </section>
+
+        <section className="card settings-card about">
+          <h2>O aplikaci</h2>
+          <p className="about-name">
+            <b>Skylimit</b> <span className="num">{__APP_VERSION__}</span>
+          </p>
+          <p className="hint">
+            Widget, který hlídá limity Claude a Codexu a počítá práci v cenách API.
+            <br />
+            &copy; 2026 Michal Jašek &middot; licence MIT &middot; github.com/myspulin24/skylimit
+          </p>
+          <button type="button" className="btn with-icon" onClick={onOpenFeedback}>
+            <FeedbackIcon />
+            Poslat zpětnou vazbu
+          </button>
         </section>
 
         <section className="card settings-card danger-zone">

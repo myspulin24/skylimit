@@ -11,6 +11,7 @@ vi.mock("./api", () => ({
   setClickThrough: vi.fn(),
   setWidgetTransparency: vi.fn(),
   refreshUsage: vi.fn(() => Promise.resolve()),
+  openFeedback: vi.fn(() => Promise.resolve()),
   openApp: vi.fn(() => Promise.resolve()),
   clearHistory: vi.fn(),
   onSnapshot: vi.fn(() => () => {}),
@@ -94,6 +95,15 @@ describe("Widget", () => {
     // It sits next to the gear in the footer.
     const actions = button.closest(".foot-actions") as HTMLElement;
     expect(within(actions).getByRole("button", { name: "Otevřít aplikaci" })).toBeInTheDocument();
+  });
+
+  it("the speech bubble opens the app with the feedback dialog", async () => {
+    await renderWidget(fixtures.normal(nowSec()));
+    const button = screen.getByRole("button", { name: "Poslat zpětnou vazbu" });
+    expect(button.closest(".foot-actions")).not.toBeNull();
+    fireEvent.click(button);
+    expect(api.openFeedback).toHaveBeenCalledTimes(1);
+    expect(api.openApp).not.toHaveBeenCalled();
   });
 
   it("stage tooltip explains what each creature is doing", async () => {

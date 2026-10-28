@@ -14,7 +14,7 @@ coverage/
 feedback/.dev.vars
 feedback/.wrangler/
 
-# Local data (the history database lives in %LOCALAPPDATA%\ai-usage-data,
+# Local data (the history database lives in %LOCALAPPDATA%\skylimit-data,
 # never in the repository, but be explicit)
 *.sqlite
 *.sqlite-wal

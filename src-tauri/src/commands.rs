@@ -40,6 +40,12 @@ pub async fn refresh_usage(state: State<'_, Shell>) -> Result<(), String> {
     Ok(())
 }
 
+/// The widget's speech-bubble button: the app window with the feedback dialog.
+#[tauri::command]
+pub async fn open_feedback(app: AppHandle) -> Result<(), String> {
+    windows::open_feedback(&app).map_err(|e| format!("Okno se zpětnou vazbou se nepodařilo otevřít: {e}"))
+}
+
 #[tauri::command]
 pub async fn open_app(app: AppHandle) -> Result<(), String> {
     windows::open_app(&app).map_err(|e| format!("Okno aplikace se nepodařilo otevřít: {e}"))

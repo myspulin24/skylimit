@@ -7,6 +7,7 @@ import { onOpenFeedback } from "./api";
 import { Character } from "./Character";
 import { DailyChart } from "./DailyChart";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { FeedbackIcon } from "./icons";
 import {
   NBSP,
   PROVIDER_NAME,
@@ -66,7 +67,8 @@ export function AppWindow() {
           </div>
         </div>
         <div className="head-actions">
-          <button type="button" className="btn small feedback-open" onClick={() => setFeedbackOpen(true)}>
+          <button type="button" className="head-pill" onClick={() => setFeedbackOpen(true)}>
+            <FeedbackIcon />
             Zpětná vazba
           </button>
           <nav className="tabs" role="tablist" aria-label="Sekce">
@@ -99,9 +101,12 @@ export function AppWindow() {
         ) : tab === "states" ? (
           <StatesGuide snapshot={snapshot} />
         ) : (
-          <SettingsForm snapshot={snapshot} />
+          <SettingsForm snapshot={snapshot} onOpenFeedback={() => setFeedbackOpen(true)} />
         )}
       </main>
+      <footer className="app-foot">
+        Skylimit {__APP_VERSION__} &middot; &copy; 2026 Michal Jašek &middot; licence MIT
+      </footer>
     </div>
   );
 }

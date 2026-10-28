@@ -126,6 +126,13 @@ export async function sendFeedback(request: FeedbackRequest): Promise<FeedbackRe
   return { id: Math.random().toString(16).slice(2, 10) };
 }
 
+export async function openFeedback(): Promise<void> {
+  const url = new URL(location.href);
+  url.searchParams.set("window", "app");
+  url.searchParams.set("feedback", "1");
+  window.open(url.toString(), "_blank");
+}
+
 export async function openApp(): Promise<void> {
   const url = new URL(location.href);
   url.searchParams.set("window", "app");

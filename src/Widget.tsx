@@ -2,8 +2,9 @@
 // (order of the approved wireframe). Renders only what the core sends.
 
 import { useEffect, useState, type CSSProperties } from "react";
-import { openApp, refreshUsage } from "./api";
+import { openApp, openFeedback, refreshUsage } from "./api";
 import { Character } from "./Character";
+import { FeedbackIcon } from "./icons";
 import {
   CREATURE_NAME,
   MOOD_CAPTION,
@@ -82,6 +83,15 @@ function WidgetBody({ snapshot, receivedAt, now }: BodyProps) {
       <footer className="widget-foot">
         <span className="updated">aktualizováno {formatAgo(updatedAgo)}</span>
         <div className="foot-actions">
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => void openFeedback()}
+            aria-label="Poslat zpětnou vazbu"
+            title="Poslat zpětnou vazbu"
+          >
+            <FeedbackIcon />
+          </button>
           <RefreshButton />
           <button type="button" className="icon-btn" onClick={() => void openApp()} aria-label="Otevřít aplikaci" title="Otevřít aplikaci">
             <GearIcon />

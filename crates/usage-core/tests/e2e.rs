@@ -66,7 +66,7 @@ impl Env {
         Config {
             claude_projects_dir: self.projects.clone(),
             t3_logs_dir: None,
-            db_path: self.tmp.path().join("ai-usage-data").join("history.sqlite"),
+            db_path: self.tmp.path().join("skylimit-data").join("history.sqlite"),
             diag_dir: self.tmp.path().join("diag"),
             codex,
             settings: Settings::default(),
@@ -384,7 +384,7 @@ fn e2e_core_with_fake_codex_server() {
     // values come back Stale, and a missing CLI says so.
     env.set_clock(env.now() + 11 * 60);
     let h = Core::start(env.config(CodexSource::Spawn {
-        program: "ai-usage-test-no-such-codex".into(),
+        program: "skylimit-test-no-such-codex".into(),
         args: Vec::new(),
     }));
     let s = wait_for(&h, &env, "restart backfill + codex not found", |s| {
@@ -413,11 +413,11 @@ fn codex_cli_missing_is_unknown_and_confused() {
     let codex = if cfg!(windows) {
         CodexSource::Spawn {
             program: "cmd.exe".into(),
-            args: vec!["/C".into(), "ai-usage-test-no-such-codex".into(), "app-server".into()],
+            args: vec!["/C".into(), "skylimit-test-no-such-codex".into(), "app-server".into()],
         }
     } else {
         CodexSource::Spawn {
-            program: "ai-usage-test-no-such-codex".into(),
+            program: "skylimit-test-no-such-codex".into(),
             args: vec!["app-server".into()],
         }
     };

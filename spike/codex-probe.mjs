@@ -60,7 +60,7 @@ function scrub(value, key = "") {
 
 const timer = setTimeout(() => { console.log("TIMEOUT"); child.kill(); process.exit(2); }, 30000);
 
-const init = await send("initialize", { clientInfo: { name: "ai-usage-spike", version: "0.0.1" } });
+const init = await send("initialize", { clientInfo: { name: "skylimit-spike", version: "0.0.1" } });
 console.log("initialize:", init.error ? JSON.stringify(init.error) : "ok");
 notify("initialized");
 

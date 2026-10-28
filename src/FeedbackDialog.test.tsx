@@ -114,6 +114,25 @@ describe("Zpětná vazba", () => {
   });
 });
 
+describe("O aplikaci a copyright", () => {
+  it("settings show version and copyright and open the feedback dialog", async () => {
+    const user = userEvent.setup();
+    render(<AppWindow />);
+    expect(screen.getByRole("contentinfo")).toHaveTextContent(`Skylimit ${__APP_VERSION__} · © 2026 Michal Jašek · licence MIT`);
+    await user.click(await screen.findByRole("tab", { name: "Nastavení" }));
+    const about = (await screen.findByRole("heading", { name: "O aplikaci" })).closest("section") as HTMLElement;
+    expect(within(about).getByText(__APP_VERSION__)).toBeInTheDocument();
+    expect(within(about).getByText(/© 2026 Michal Jašek/)).toBeInTheDocument();
+    await user.click(within(about).getByRole("button", { name: "Poslat zpětnou vazbu" }));
+    expect(await screen.findByRole("dialog", { name: "Zpětná vazba" })).toBeInTheDocument();
+  });
+
+  it("the version comes from package.json", async () => {
+    const { version } = (await import("../package.json")).default as { version: string };
+    expect(__APP_VERSION__).toBe(version);
+  });
+});
+
 describe("readAttachment", () => {
   it("encodes an allowed file and takes the type from the extension", async () => {
     const result = await readAttachment(new File(["ahoj"], "log.txt"));

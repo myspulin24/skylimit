@@ -1,16 +1,16 @@
 [package]
-name = "ai-usage"
-version = "0.4.0"
-description = "AI Usage – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
+name = "skylimit"
+version = "0.5.0"
+description = "Skylimit – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
 publish = false
-default-run = "ai-usage"
+default-run = "skylimit"
 
 [lib]
-name = "ai_usage_lib"
-# Windows-only desktop app: no mobile static/dynamic library targets.
+name = "skylimit_lib"
+# Desktop app (Windows, macOS, Linux): no mobile static/dynamic library targets.
 crate-type = ["rlib"]
 
 [build-dependencies]

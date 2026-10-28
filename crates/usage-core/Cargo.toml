@@ -1,7 +1,7 @@
 [package]
 name = "usage-core"
 version = "0.1.0"
-description = "ai-usage core: Claude JSONL cost, Codex app-server limits, score, moods. No Tauri dependency."
+description = "Skylimit core: Claude JSONL cost, Codex app-server limits, score, moods. No Tauri dependency."
 edition.workspace = true
 license.workspace = true
 authors.workspace = true

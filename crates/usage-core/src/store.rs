@@ -1,4 +1,4 @@
-//! SQLite history (decision D4: `%LOCALAPPDATA%\ai-usage-data\history.sqlite`,
+//! SQLite history (decision D4: `%LOCALAPPDATA%\skylimit-data\history.sqlite`,
 //! the path comes from `Config::db_path`).
 //!
 //! Only the core thread owns this connection (WAL). Aggregates hold TOKENS,

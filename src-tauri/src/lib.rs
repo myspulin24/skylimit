@@ -44,6 +44,7 @@ pub fn run() {
             feedback::feedback_status,
             feedback::feedback_send,
             commands::open_app,
+            commands::open_feedback,
             commands::clear_history,
         ])
         .build(tauri::generate_context!());

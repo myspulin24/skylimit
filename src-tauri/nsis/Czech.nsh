@@ -11,7 +11,7 @@ LangString appRunningOkKill ${LANG_CZECH} "Aplikace ${PRODUCTNAME} je spuštěn�
 LangString chooseMaintenanceOption ${LANG_CZECH} "Vyberte akci údržby"
 LangString choowHowToInstall ${LANG_CZECH} "Vyberte, jak chcete ${PRODUCTNAME} nainstalovat."
 LangString createDesktop ${LANG_CZECH} "Vytvořit zástupce na ploše"
-LangString deleteAppData ${LANG_CZECH} "Smazat i data aplikace (mezipaměť oken; historie ve složce ai-usage-data zůstane)"
+LangString deleteAppData ${LANG_CZECH} "Smazat i data aplikace (mezipaměť oken; historie ve složce skylimit-data zůstane)"
 LangString dontUninstall ${LANG_CZECH} "Neodinstalovat"
 LangString dontUninstallDowngrade ${LANG_CZECH} "Neodinstalovat (přechod na starší verzi bez odinstalace není podporován)"
 LangString failedToKillApp ${LANG_CZECH} "Aplikaci ${PRODUCTNAME} se nepodařilo ukončit. Zavřete ji ručně a zkuste to znovu."

@@ -86,7 +86,8 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
   a barva podle zaplnění (zelená, od 75 % oranžová, od 95 % červená).
 - **Skóre měsíce v cenách API** s násobkem paušálu („vytěženo 4,6×“)
   a křivkou po dnech.
-- **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned.
+- **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned, **bublina**
+  otevře okno se zpětnou vazbou.
 - **Průhlednost** (0–90 %) a **průchod kliknutí**, kdy widget nereaguje na myš.
 
 ### Nálady
@@ -120,7 +121,8 @@ v aplikaci ukáže všechny s velkým animovaným náhledem.
   modelu a projektu.
 - **Stavy:** všechny nálady, stavy řádků limitů, značky u skóre a barvy ikony.
 - **Nastavení:** paušál a měna (EUR, CZK), co nepočítat do skóre,
-  průhlednost widgetu, průchod kliknutí, smazání historie.
+  průhlednost widgetu, průchod kliknutí, smazání historie a **O aplikaci**
+  (verze, licence).
 - **Zpětná vazba:** formulář pro chybu, změnu nebo vylepšení s volitelnou
   přílohou. Viz [Soukromí](#soukromí-a-oprávnění).
 
@@ -157,13 +159,14 @@ takže je odinstalace ani nová verze nesmaže:
 
 | Systém | Složka |
 | --- | --- |
-| Windows | `%LOCALAPPDATA%\ai-usage-data` |
-| macOS | `~/Library/Application Support/ai-usage-data` |
-| Linux | `~/.local/share/ai-usage-data` |
+| Windows | `%LOCALAPPDATA%\skylimit-data` |
+| macOS | `~/Library/Application Support/skylimit-data` |
+| Linux | `~/.local/share/skylimit-data` |
 
 Uvnitř je `history.sqlite` (historie skóre a limitů), `settings.json`,
 pozice oken a `diag/diag.log`. Diagnostický log obsahuje jen metadata, nikdy
-text konverzací ani tajemství. Složka nese původní pracovní název projektu.
+text konverzací ani tajemství. Do verze 0.4.0 se složka jmenovala
+`ai-usage-data`; novější verze ji při prvním spuštění sama přejmenuje.
 
 | Proměnná prostředí | Účel |
 | --- | --- |
@@ -205,7 +208,7 @@ npm test
 | Rozhraní | `vitest` | Widget, okno aplikace, nastavení, zpětná vazba, formátování |
 | Worker | `vitest` | Kontrola tvaru zprávy, issue, limity, chyby GitHubu |
 | Jádro | `cargo test -p usage-core` | Ceny, skóre, nálady, čtení záznamů a logů, end-to-end proti podvrženému `codex app-server` |
-| Shell | `cargo test -p ai-usage` | Nastavení, ikona, odesílání zpětné vazby proti místnímu HTTP serveru |
+| Shell | `cargo test -p skylimit` | Nastavení, ikona, odesílání zpětné vazby proti místnímu HTTP serveru |
 
 ### Architektura
 
