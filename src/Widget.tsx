@@ -21,6 +21,7 @@ import {
   isUncertainScore,
 } from "./format";
 import { useNow, useSnapshot } from "./hooks";
+import { hasOffer, useUpdate } from "./update";
 import type { LimitWindow, Mood, Provider, ProviderLimits, ProviderScore, Snapshot } from "./types";
 import "./styles/widget.css";
 
@@ -81,7 +82,12 @@ function WidgetBody({ snapshot, receivedAt, now }: BodyProps) {
       {!snapshot.backfill.done && <BackfillLine backfill={snapshot.backfill} />}
 
       <footer className="widget-foot">
-        <span className="updated">aktualizováno {formatAgo(updatedAgo)}</span>
+        <div className="foot-info">
+          <span className="updated">aktualizováno {formatAgo(updatedAgo)}</span>
+          <span className="version" title="Verze Skylimitu">
+            v{__APP_VERSION__}
+          </span>
+        </div>
         <div className="foot-actions">
           <button
             type="button"
@@ -93,9 +99,7 @@ function WidgetBody({ snapshot, receivedAt, now }: BodyProps) {
             <FeedbackIcon />
           </button>
           <RefreshButton />
-          <button type="button" className="icon-btn" onClick={() => void openApp()} aria-label="Otevřít aplikaci" title="Otevřít aplikaci">
-            <GearIcon />
-          </button>
+          <GearButton />
         </div>
       </footer>
 
@@ -393,6 +397,19 @@ function RefreshIcon() {
         <path d="M16.2 3.6v4h-4" />
       </g>
     </svg>
+  );
+}
+
+/** Opens the app; a dot when a new version is waiting there. */
+function GearButton() {
+  const update = useUpdate();
+  const offer = hasOffer(update);
+  const label = offer ? `Otevřít aplikaci: je k dispozici Skylimit ${update?.version}` : "Otevřít aplikaci";
+  return (
+    <button type="button" className={offer ? "icon-btn has-update" : "icon-btn"} onClick={() => void openApp()} aria-label={label} title={label}>
+      <GearIcon />
+      {offer && <span className="update-dot" aria-hidden="true" />}
+    </button>
   );
 }
 

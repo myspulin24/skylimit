@@ -85,6 +85,7 @@ export interface Settings {
   excludedEntrypoints: string[];     // default []
   clickThrough: boolean;             // default false
   widgetTransparency: number;        // 0..90 (percent), default 0; applied immediately
+  checkUpdates: boolean;             // default true; automatic update checks
 }
 ```
 

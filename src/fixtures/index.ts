@@ -345,6 +345,7 @@ export function defaultSettings(): Settings {
     excludedEntrypoints: [],
     clickThrough: false,
     widgetTransparency: 0,
+    checkUpdates: true,
   };
 }
 

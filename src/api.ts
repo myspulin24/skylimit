@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot } from "./types";
+import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
 
 declare global {
   interface Window {
@@ -91,6 +91,42 @@ export function onOpenFeedback(cb: () => void): () => void {
       else unlisten = fn;
     })
     .catch((err: unknown) => console.error("open-feedback listener failed", err));
+  return () => {
+    disposed = true;
+    unlisten?.();
+  };
+}
+
+export async function updateStatus(): Promise<UpdateStatus> {
+  if (isTauri()) return invoke<UpdateStatus>("update_status");
+  return (await mock()).updateStatus();
+}
+
+/** Manual "Zkontrolovat aktualizace": errors come back in the status. */
+export async function checkForUpdate(): Promise<UpdateStatus> {
+  if (isTauri()) return invoke<UpdateStatus>("update_check");
+  return (await mock()).checkForUpdate();
+}
+
+/** Download, verify, install and restart. Resolves only if it failed. */
+export async function installUpdate(): Promise<void> {
+  if (isTauri()) return invoke<void>("update_install");
+  return (await mock()).installUpdate();
+}
+
+/** Every status change (check, progress) as the "update" event. */
+export function onUpdate(cb: (status: UpdateStatus) => void): () => void {
+  let disposed = false;
+  let unlisten: (() => void) | null = null;
+  const ready: Promise<() => void> = isTauri()
+    ? listen<UpdateStatus>("update", (event) => cb(event.payload))
+    : mock().then((m) => m.subscribeUpdate(cb));
+  ready
+    .then((fn) => {
+      if (disposed) fn();
+      else unlisten = fn;
+    })
+    .catch((err: unknown) => console.error("update listener failed", err));
   return () => {
     disposed = true;
     unlisten?.();

@@ -138,6 +138,7 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
           </div>
         ) : (
           <form onSubmit={onSubmit} aria-label="Zpětná vazba">
+            <p className="hint feedback-intro">Napiš, co nefunguje nebo co by šlo udělat líp. Každou zprávu si přečtu.</p>
             <fieldset className="field">
               <legend>Druh</legend>
               <div className="segmented">
@@ -182,18 +183,7 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
             </label>
             {attachmentError && <p className="status err">{attachmentError}</p>}
 
-            <p className="feedback-where">
-              {status === null
-                ? "Zjišťuji, kam se zpráva pošle…"
-                : status.available
-                  ? (
-                      <>
-                        Odejde na <b>{status.host}</b> do soukromého repozitáře, uvidí ji jen autor Skylimitu. Přidá se
-                        verze {status.version} a systém {status.os}.
-                      </>
-                    )
-                  : `Odeslat teď nejde: ${status.error}`}
-            </p>
+            {status && !status.available && <p className="status err">Odeslat teď nejde: {status.error}</p>}
 
             {phase.kind === "edit" && phase.error && (
               <p className="status err" role="alert">

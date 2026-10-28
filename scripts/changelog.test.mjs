@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { extractRelease, listVersions } from './changelog.mjs'
+import { compareVersions, extractRelease, isValidVersion, listVersions, parseVersion, releaseDate } from './changelog.mjs'
 
 const CHANGELOG = [
   '# Změny',
@@ -75,5 +75,65 @@ describe('extractRelease', () => {
 describe('listVersions', () => {
   it('vyjmenuje verze, ke kterým sekce existuje', () => {
     expect(listVersions(CHANGELOG)).toEqual(['0.6.2', '0.6.1', '0.6.0'])
+  })
+})
+
+describe('formát Keep a Changelog', () => {
+  const KAC = [
+    '# Změny',
+    '',
+    '## [Nevydáno]',
+    '',
+    '## [0.7.0-rc.1] — 2026-11-02',
+    '',
+    '- Předběžná.',
+    '',
+    '## [0.6.0] — 2026-10-28',
+    '',
+    '### Přidáno',
+    '',
+    '- Updater.',
+    '',
+    '[Nevydáno]: https://github.com/o/r/compare/v0.6.0...HEAD',
+    '[0.6.0]: https://github.com/o/r/compare/v0.5.0...v0.6.0',
+  ].join('\n')
+
+  it('najde sekci s verzí v hranatých závorkách a odkazy pod čarou vynechá', () => {
+    expect(extractRelease(KAC, '0.6.0')).toBe('### Přidáno\n\n- Updater.')
+    expect(extractRelease(KAC, '0.7.0-rc.1')).toBe('- Předběžná.')
+  })
+
+  it('[Nevydáno] není verze a datum se čte z nadpisu', () => {
+    expect(listVersions(KAC)).toEqual(['0.7.0-rc.1', '0.6.0'])
+    expect(releaseDate(KAC, '0.6.0')).toBe('2026-10-28')
+    expect(releaseDate(KAC, '9.9.9')).toBeNull()
+  })
+})
+
+describe('SemVer 2.0.0-rc.2', () => {
+  it('platná verze je X.Y.Z bez úvodních nul, s volitelnou předběžnou verzí a sestavením (pravidla 2, 9, 10)', () => {
+    for (const ok of ['0.0.0', '0.6.0', '1.0.0', '10.20.30', '1.0.0-alpha', '1.0.0-alpha.1', '1.0.0-0.3.7', '1.0.0-x.7.z.92', '1.0.0+build.1', '1.0.0-rc.1+build.1']) {
+      expect(isValidVersion(ok), ok).toBe(true)
+    }
+    for (const bad of ['1.0', '01.0.0', '1.02.0', '1.0.0-', '1.0.0-al..pha', 'v1.0.0', '1.0.0-alpha_beta', '']) {
+      expect(isValidVersion(bad), bad).toBe(false)
+    }
+    expect(parseVersion('1.2.3-rc.1+b.5')).toEqual({ major: 1, minor: 2, patch: 3, pre: ['rc', '1'], build: ['b', '5'] })
+  })
+
+  it('přednost podle pravidla 11 (příklad ze specifikace)', () => {
+    const ordered = ['1.0.0-alpha', '1.0.0-alpha.1', '1.0.0-beta.2', '1.0.0-beta.11', '1.0.0-rc.1', '1.0.0']
+    for (let i = 0; i < ordered.length - 1; i++) {
+      expect(compareVersions(ordered[i], ordered[i + 1]), `${ordered[i]} < ${ordered[i + 1]}`).toBeLessThan(0)
+    }
+    expect([...ordered].reverse().sort(compareVersions)).toEqual(ordered)
+  })
+
+  it('čísla se porovnávají číselně a metadata sestavení se nepočítají', () => {
+    expect(compareVersions('0.6.10', '0.6.9')).toBeGreaterThan(0)
+    expect(compareVersions('0.10.0', '0.9.9')).toBeGreaterThan(0)
+    expect(compareVersions('1.0.0', '0.99.99')).toBeGreaterThan(0)
+    expect(compareVersions('1.0.0+a', '1.0.0+b')).toBe(0)
+    expect(() => compareVersions('1.0', '1.0.0')).toThrow()
   })
 })

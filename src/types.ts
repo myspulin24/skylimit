@@ -78,6 +78,7 @@ export interface Settings {
   excludedEntrypoints: string[];     // default []
   clickThrough: boolean;             // default false
   widgetTransparency: number;        // 0..90 (percent), default 0; applied immediately
+  checkUpdates: boolean;             // default true; automatic update checks
 }
 
 // Feedback ("Zpětná vazba"), shell commands `feedback_status` / `feedback_send`.
@@ -103,3 +104,20 @@ export interface FeedbackRequest {
 }
 
 export interface FeedbackReceipt { id: string }
+
+// Updates from GitHub Releases, shell commands `update_status` / `update_check`
+// / `update_install` and the event "update" (src-tauri/src/updater.rs).
+
+export type UpdatePhase = "idle" | "checking" | "upToDate" | "available" | "downloading" | "installing" | "error";
+
+export interface UpdateStatus {
+  phase: UpdatePhase;
+  current: string;                   // running version
+  version: string | null;            // version on offer
+  notes: string | null;              // release notes (Markdown from CHANGELOG.md)
+  date: number | null;               // release date, epoch s
+  progress: number | null;           // 0..1 while downloading
+  error: string | null;              // plain-language reason (manual check or install)
+  checkedAt: number | null;          // epoch s of the last finished check
+  auto: boolean;                     // automatic checks on (setting and environment)
+}

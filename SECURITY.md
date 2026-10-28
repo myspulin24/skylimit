@@ -11,7 +11,7 @@ nepíše e-mail.
 
 Pomůže, když přiložíte:
 
-- verzi aplikace a systém (obojí ukazuje okno **Zpětná vazba** pod formulářem),
+- verzi aplikace (**Nastavení › O aplikaci**) a systém,
 - co se má stát a co se stane,
 - pokud jde o zpracování souboru (záznam Claude Code, log T3 Code), tak ukázku
   toho souboru. Stačí zkrácená a bez obsahu konverzace.
@@ -19,7 +19,7 @@ Pomůže, když přiložíte:
 ## Co čekat
 
 Skylimit dělá jeden člověk ve volném čase. Žádné lhůty na odpověď proto
-nesliby; platí to, co se dodržet dá:
+neslibuji; platí to, co se dodržet dá:
 
 - Opravuje se **jen poslední vydaná verze.** Starší se nezáplatují.
 - Oprava vyjde jako běžné vydání a v poznámkách k němu bude napsané, čeho se
@@ -37,6 +37,7 @@ místa jsou tato:
 | **Záznamy Claude Code** | `crates/usage-core/src/claude.rs` čte `~/.claude/projects/**/*.jsonl` po řádcích a ukládá jen počty tokenů, model a název složky projektu |
 | **Spouštění Codexu** | `crates/usage-core/src/codex.rs` a `CodexSource::official()` spouštějí oficiální `codex app-server` s pevnými argumenty (na Windows v Job Objectu, na macOS a Linuxu přes přihlašovací shell). Kdyby šlo do příkazu něco propašovat, je to nález |
 | **Zpětná vazba** | `src-tauri/src/feedback.rs` posílá text na jedinou zakompilovanou adresu (jen https, nebo http na tenhle počítač). Worker ve [`feedback/`](feedback/) ověřuje tvar zprávy a drží token ke GitHubu |
+| **Ověřování aktualizací** | `src-tauri/src/updater.rs` stahuje balíček z GitHub Releases a `tauri-plugin-updater` ho ověří podpisem minisign proti klíči v `src-tauri/tauri.conf.json`. Kdyby šlo ověření obejít, dala by se podstrčit „aktualizace“ |
 | **Oprávnění oken** | `src-tauri/capabilities/` určuje, které příkazy smí widget a které okno aplikace. Widget nesmí měnit nastavení ani mazat historii |
 
 ## Co chybou není
@@ -50,8 +51,10 @@ nemusíte:
 - **Skylimit čte soubory Claude Code, Codexu a T3 Code.** To je jeho práce.
   Nikdy ale nečte přihlašovací údaje (`~/.claude/.credentials.json`,
   `~/.codex/auth.json`) a nevolá API Anthropicu.
-- **Kontrola kurzu ČNB.** Jediné spojení, které Skylimit navazuje sám: jednou
-  denně stáhne kurz koruny k euru a dolaru. Odchází jen běžný dotaz na veřejnou
-  stránku ČNB, žádná data.
+- **Kontrola kurzu ČNB a aktualizací.** Jediná spojení, která Skylimit navazuje
+  sám: jednou denně stáhne kurz koruny k euru a dolaru a po spuštění a každých
+  6 hodin se podívá na `latest.json` v GitHub Releases. Odchází jen běžný
+  dotaz, žádná data. Kontrola aktualizací se vypíná v nastavení nebo
+  `SKYLIMIT_AUTO_UPDATE=0`.
 - **Zpětná vazba odchází na Cloudflare.** Přesně tam ji posílá tlačítko
-  **Odeslat** a okno to říká dřív, než se odešle.
+  **Odeslat**; popisuje to [README](README.md#soukromí-a-oprávnění).

@@ -607,3 +607,32 @@
     opacity: 1;
   }
 }
+
+/* A new version is waiting in the app: dot on the gear. */
+.icon-btn.has-update {
+  position: relative;
+  color: var(--ink-1);
+}
+
+.update-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid #1b1f27;
+  border-radius: 50%;
+  background: #5fd0b5;
+}
+
+.foot-info {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.foot-info .version {
+  color: var(--ink-4);
+  font-variant-numeric: tabular-nums;
+}

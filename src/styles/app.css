@@ -1259,3 +1259,117 @@ html[data-window="app"] body {
   text-align: center;
   color: var(--ink-4);
 }
+
+/* ---------- update banner, release notes, about card ---------- */
+
+.update-banner {
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border: 1px solid rgba(95, 208, 181, 0.35);
+  border-radius: var(--radius-l);
+  background: rgba(47, 168, 143, 0.1);
+}
+
+.update-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+}
+
+.update-badge {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(95, 208, 181, 0.2);
+  font-weight: 700;
+  color: #7fd6c2;
+}
+
+.update-text {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.update-text b {
+  color: var(--ink-1);
+}
+
+.update-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.update-progress {
+  height: 4px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.update-progress-fill {
+  display: block;
+  height: 100%;
+  background: #5fd0b5;
+  transition: width 0.2s linear;
+}
+
+.update-banner .status.err {
+  margin: 8px 0 0;
+}
+
+.release-notes {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.release-notes h4 {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-1);
+}
+
+.release-notes ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.release-notes li + li {
+  margin-top: 4px;
+}
+
+.release-notes b {
+  color: var(--ink-1);
+}
+
+.update-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: center;
+}
+
+.update-line .hint {
+  flex: 1 1 220px;
+  margin: 0;
+}
+
+.err-text {
+  color: #f2a39b;
+}
+
+.feedback-intro {
+  margin: 4px 0 2px;
+  font-size: 13px;
+}

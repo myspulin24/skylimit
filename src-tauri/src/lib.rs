@@ -13,6 +13,7 @@ mod feedback;
 mod settings;
 mod shell;
 mod tray;
+mod updater;
 mod window_state;
 mod windows;
 
@@ -30,6 +31,7 @@ pub fn run() {
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
             windows::reveal_widget(app);
         }))
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .setup(|app| {
             setup(app.handle())?;
             Ok(())
@@ -46,6 +48,9 @@ pub fn run() {
             commands::open_app,
             commands::open_feedback,
             commands::clear_history,
+            updater::update_status,
+            updater::update_check,
+            updater::update_install,
         ])
         .build(tauri::generate_context!());
 
@@ -89,6 +94,8 @@ fn setup(app: &AppHandle) -> tauri::Result<()> {
         app: WindowTracker::new(paths.app_placement()),
     });
     app.manage(Shell::new(core, paths));
+    app.manage(updater::Updates::new(app.package_info().version.to_string()));
+    updater::spawn_auto(app.clone());
 
     tray::create(app, settings.click_through)?;
     windows::create_widget(app, settings.click_through)?;

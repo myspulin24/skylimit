@@ -15,6 +15,10 @@ vi.mock("./api", () => ({
   openApp: vi.fn(() => Promise.resolve()),
   clearHistory: vi.fn(),
   onSnapshot: vi.fn(() => () => {}),
+  updateStatus: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  checkForUpdate: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  installUpdate: vi.fn(() => Promise.resolve()),
+  onUpdate: vi.fn(() => () => {}),
 }));
 
 import * as api from "./api";
@@ -106,6 +110,19 @@ describe("Widget", () => {
     expect(api.openApp).not.toHaveBeenCalled();
   });
 
+  it("a dot on the gear says a new version is waiting in the app", async () => {
+    vi.mocked(api.updateStatus).mockResolvedValueOnce({
+      phase: "available", current: "0.6.0", version: "0.7.0", notes: null, date: null,
+      progress: null, error: null, checkedAt: null, auto: true,
+    });
+    await renderWidget(fixtures.normal(nowSec()));
+    const gear = await screen.findByRole("button", { name: "Otevřít aplikaci: je k dispozici Skylimit 0.7.0" });
+    expect(gear).toHaveClass("has-update");
+    expect(gear.querySelector(".update-dot")).not.toBeNull();
+    fireEvent.click(gear);
+    expect(api.openApp).toHaveBeenCalledTimes(1);
+  });
+
   it("stage tooltip explains what each creature is doing", async () => {
     await renderWidget(fixtures.normal(nowSec()));
     const title = (document.querySelector(".stage") as HTMLElement).getAttribute("title") ?? "";
@@ -168,9 +185,10 @@ describe("Widget", () => {
     expect(screen.queryByText(/načítám historii/)).not.toBeInTheDocument();
   });
 
-  it("footer: 'aktualizováno před 2 min' and the gear opens the app", async () => {
+  it("footer: 'aktualizováno před 2 min', the version and the gear opens the app", async () => {
     await renderWidget(fixtures.normal(nowSec()));
     expect(screen.getByText("aktualizováno před 2 min")).toBeInTheDocument();
+    expect(screen.getByTitle("Verze Skylimitu")).toHaveTextContent(`v${__APP_VERSION__}`);
     fireEvent.click(screen.getByRole("button", { name: "Otevřít aplikaci" }));
     expect(api.openApp).toHaveBeenCalledTimes(1);
   });

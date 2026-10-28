@@ -13,6 +13,10 @@ vi.mock("./api", () => ({
   openApp: vi.fn(() => Promise.resolve()),
   clearHistory: vi.fn(() => Promise.resolve()),
   onSnapshot: vi.fn(() => () => {}),
+  updateStatus: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  checkForUpdate: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  installUpdate: vi.fn(() => Promise.resolve()),
+  onUpdate: vi.fn(() => () => {}),
   feedbackStatus: vi.fn(),
   sendFeedback: vi.fn(),
   onOpenFeedback: vi.fn(() => () => {}),
@@ -42,15 +46,17 @@ async function openDialog() {
   render(<AppWindow />);
   await user.click(await screen.findByRole("button", { name: "Zpětná vazba" }));
   const dialog = await screen.findByRole("dialog", { name: "Zpětná vazba" });
-  await within(dialog).findByText(/skylimit-feedback\.michal-jasek\.workers\.dev/);
+  // Sending is enabled once the shell said where it goes (not shown any more).
+  await waitFor(() => expect(within(dialog).getByRole("button", { name: "Odeslat" })).toBeEnabled());
   return { user, dialog };
 }
 
 describe("Zpětná vazba", () => {
-  it("shows where the message goes, then sends it with the tab as location", async () => {
+  it("talks to people, not about servers, and sends with the tab as location", async () => {
     vi.mocked(api.sendFeedback).mockResolvedValue({ id: "abcd1234" });
     const { user, dialog } = await openDialog();
-    expect(within(dialog).getByText(/verze 0\.4\.0 a systém windows \(x86_64\)/)).toBeInTheDocument();
+    expect(within(dialog).getByText("Napiš, co nefunguje nebo co by šlo udělat líp. Každou zprávu si přečtu.")).toBeInTheDocument();
+    expect(dialog).not.toHaveTextContent(/workers\.dev|repozitář|x86_64/);
 
     await user.click(within(dialog).getByLabelText("Vylepšení"));
     await user.type(within(dialog).getByLabelText("Zpráva"), "Tmavší widget, prosím.");

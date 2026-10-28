@@ -7,7 +7,8 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import { clearHistory, getSettings, setClickThrough, setSettings, setWidgetTransparency } from "./api";
 import { PROVIDER_NAME, sourceLabel } from "./format";
 import { FeedbackIcon } from "./icons";
-import type { PlanSetting, Provider, Settings, Snapshot } from "./types";
+import { UpdateLine } from "./update";
+import type { PlanSetting, Provider, Settings, Snapshot, UpdateStatus } from "./types";
 
 type PlanCurrency = PlanSetting["currency"];
 type PlanPeriod = PlanSetting["period"];
@@ -26,6 +27,7 @@ interface Draft {
   excludedEntrypoints: string[];
   clickThrough: boolean;
   widgetTransparency: number;
+  checkUpdates: boolean;
 }
 
 /** Same cap as the core (WIDGET_TRANSPARENCY_MAX). */
@@ -47,6 +49,7 @@ function toDraft(s: Settings): Draft {
     excludedEntrypoints: [...s.excludedEntrypoints],
     clickThrough: s.clickThrough,
     widgetTransparency: s.widgetTransparency,
+    checkUpdates: s.checkUpdates,
   };
 }
 
@@ -78,13 +81,22 @@ function toSettings(d: Draft): Settings | { error: string } {
     excludedEntrypoints: d.excludedEntrypoints,
     clickThrough: d.clickThrough,
     widgetTransparency: d.widgetTransparency,
+    checkUpdates: d.checkUpdates,
   };
 }
 
 type Status = { kind: "idle" } | { kind: "saving" } | { kind: "saved" } | { kind: "error"; text: string };
 type ClearState = "idle" | "confirm" | "busy" | "done" | "error";
 
-export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot | null; onOpenFeedback: () => void }) {
+export function SettingsForm({
+  snapshot,
+  update,
+  onOpenFeedback,
+}: {
+  snapshot: Snapshot | null;
+  update: UpdateStatus | null;
+  onOpenFeedback: () => void;
+}) {
   const [draft, setDraft] = useState<Draft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
@@ -107,12 +119,12 @@ export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot 
   if (loadError) return <p className="app-empty">Nastavení se nepodařilo načíst: {loadError}</p>;
   if (!draft) return <p className="app-empty">Načítám nastavení…</p>;
 
-  const update = (patch: Partial<Draft>) => {
+  const update_ = (patch: Partial<Draft>) => {
     setDraft({ ...draft, ...patch });
     setStatus({ kind: "idle" });
   };
   const updatePlan = (p: Provider, patch: Partial<PlanDraft>) =>
-    update({ plans: { ...draft.plans, [p]: { ...draft.plans[p], ...patch } } });
+    update_({ plans: { ...draft.plans, [p]: { ...draft.plans[p], ...patch } } });
 
   // Entry points seen this month plus any excluded earlier but quiet now.
   const sourceKeys = [
@@ -122,16 +134,16 @@ export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot 
 
   const toggleExcluded = (key: string, excluded: boolean) => {
     const next = excluded ? [...draft.excludedEntrypoints, key] : draft.excludedEntrypoints.filter((k) => k !== key);
-    update({ excludedEntrypoints: sourceKeys.filter((k) => next.includes(k)) });
+    update_({ excludedEntrypoints: sourceKeys.filter((k) => next.includes(k)) });
   };
 
   const onClickThrough = (on: boolean) => {
-    update({ clickThrough: on });
+    update_({ clickThrough: on });
     setClickThrough(on).catch((err: unknown) => setStatus({ kind: "error", text: `Průchod kliknutí se nepřepnul: ${String(err)}` }));
   };
 
   const onTransparency = (value: number) => {
-    update({ widgetTransparency: value });
+    update_({ widgetTransparency: value });
     const queue = transparencyQueue.current;
     queue.next = value;
     if (queue.busy) return;
@@ -242,7 +254,7 @@ export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot 
             <input
               type="checkbox"
               checked={draft.codexEstimateInScore}
-              onChange={(e) => update({ codexEstimateInScore: e.target.checked })}
+              onChange={(e) => update_({ codexEstimateInScore: e.target.checked })}
             />
             Započítat odhad Codexu do skóre
           </label>
@@ -280,7 +292,7 @@ export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot 
             <div className="segmented">
               {(["EUR", "CZK"] as const).map((c) => (
                 <label key={c} className={draft.currency === c ? "is-on" : undefined}>
-                  <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update({ currency: c })} />
+                  <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update_({ currency: c })} />
                   {c === "EUR" ? "EUR (€)" : "CZK (Kč)"}
                 </label>
               ))}
@@ -328,6 +340,15 @@ export function SettingsForm({ snapshot, onOpenFeedback }: { snapshot: Snapshot 
             <FeedbackIcon />
             Poslat zpětnou vazbu
           </button>
+
+          <fieldset className="field">
+            <legend>Aktualizace</legend>
+            <UpdateLine status={update} />
+            <label className="check">
+              <input type="checkbox" checked={draft.checkUpdates} onChange={(e) => update_({ checkUpdates: e.target.checked })} />
+              Hledat novou verzi automaticky
+            </label>
+          </fieldset>
         </section>
 
         <section className="card settings-card danger-zone">

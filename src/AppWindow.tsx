@@ -8,6 +8,7 @@ import { Character } from "./Character";
 import { DailyChart } from "./DailyChart";
 import { FeedbackDialog } from "./FeedbackDialog";
 import { FeedbackIcon } from "./icons";
+import { UpdateBanner, useUpdate } from "./update";
 import {
   NBSP,
   PROVIDER_NAME,
@@ -40,6 +41,7 @@ export const BREAKDOWN_ROWS = 8;
 
 export function AppWindow() {
   const { snapshot, error } = useSnapshot();
+  const update = useUpdate();
   // `?tab=settings` / `?tab=states` lets the shell (or a dev link) open a tab directly.
   const [tab, setTab] = useState<Tab>(() => {
     const requested = new URLSearchParams(location.search).get("tab");
@@ -89,6 +91,7 @@ export function AppWindow() {
           </nav>
         </div>
       </header>
+      <UpdateBanner status={update} />
       {feedbackOpen && <FeedbackDialog location={`Okno aplikace › ${tabLabel}`} onClose={closeFeedback} />}
 
       <main className="app-main" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
@@ -101,7 +104,7 @@ export function AppWindow() {
         ) : tab === "states" ? (
           <StatesGuide snapshot={snapshot} />
         ) : (
-          <SettingsForm snapshot={snapshot} onOpenFeedback={() => setFeedbackOpen(true)} />
+          <SettingsForm snapshot={snapshot} update={update} onOpenFeedback={() => setFeedbackOpen(true)} />
         )}
       </main>
       <footer className="app-foot">

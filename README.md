@@ -62,8 +62,13 @@ prvním spuštění zastaví:
 - **Linux:** ikona v oznamovací oblasti potřebuje AppIndicator
   (`libayatana-appindicator3-1`); v GNOME rozšíření *AppIndicator Support*.
 
-Aplikace se zatím neaktualizuje sama. Novou verzi stáhněte ze stránky vydání,
-historie i nastavení zůstanou.
+Od verze 0.6.0 se Skylimit **aktualizuje sám**: po spuštění a pak každých
+6 hodin se podívá na GitHub Releases. Když najde novou verzi, ukáže ji tečka
+na ozubeném kolečku ve widgetu a pruh v okně aplikace s tlačítkem
+**Aktualizovat a restartovat**. Nic se nenainstaluje bez kliknutí. Balíček
+se před instalací ověří podpisem proti klíči zabudovanému v aplikaci.
+Historie i nastavení zůstanou. Na Linuxu se aktualizuje AppImage, balíček
+`.deb` aktualizujte ze stránky vydání.
 
 ### Co Skylimit potřebuje
 
@@ -170,6 +175,7 @@ text konverzací ani tajemství. Do verze 0.4.0 se složka jmenovala
 
 | Proměnná prostředí | Účel |
 | --- | --- |
+| `SKYLIMIT_AUTO_UPDATE=0` | Vypne automatickou kontrolu aktualizací bez ohledu na nastavení (ruční kontrola v **O aplikaci** funguje dál) |
 | `SKYLIMIT_FEEDBACK_URL` | Jiná adresa pro zpětnou vazbu, třeba místní `wrangler dev` (jen `https://`, nebo `http://` na `127.0.0.1`/`localhost`) |
 
 ---
@@ -232,9 +238,10 @@ daty se stejným tvarem snímku, takže jde ladit bez Rustu.
 
 ## Soukromí a oprávnění
 
-Skylimit nemá účty, telemetrii ani analytiku. Sám od sebe navazuje jediné
-spojení: jednou denně stáhne kurz ČNB. Codex CLI komunikuje s OpenAI sám,
-jako oficiální klient; Skylimit jen čte, co vrátí.
+Skylimit nemá účty, telemetrii ani analytiku. Sám od sebe navazuje dvě
+spojení: jednou denně stáhne kurz ČNB a občas se podívá na GitHub, jestli
+nevyšla nová verze. Codex CLI komunikuje s OpenAI sám, jako oficiální klient;
+Skylimit jen čte, co vrátí.
 
 Přihlašovací údaje se nečtou nikdy: ani `~/.claude/.credentials.json`, ani
 `~/.codex/auth.json`. Z logů T3 Code, ve kterých jsou celé konverzace, se
@@ -243,6 +250,7 @@ berou jen čísla limitů.
 | Funkce | Co odchází | Kdy |
 | --- | --- | --- |
 | Kurz ČNB | Dotaz na veřejnou stránku ČNB | Jednou denně |
+| Kontrola aktualizací | Stažení `latest.json` z GitHub Releases | Po spuštění a každých 6 hodin; vypíná se v **Nastavení › O aplikaci** nebo `SKYLIMIT_AUTO_UPDATE=0` |
 | Zpětná vazba | Napsaná zpráva, druh, záložka, verze a systém; volitelně jméno, e-mail a příloha | Po stisknutí **Odeslat** |
 
 Zpětná vazba jde přes malý Worker na Cloudflare ([`feedback/`](feedback/)),
@@ -274,8 +282,12 @@ Chyby a náměty patří do [issues](https://github.com/myspulin24/skylimit/issu
 nebo rovnou do okna **Zpětná vazba** v aplikaci. Před odesláním pull requestu
 spusťte `npm test`; stejnou sadu ověřuje CI.
 
-Historie změn je v [CHANGELOG.md](CHANGELOG.md). Text vydání se z něj
-přebírá automaticky.
+Historie změn je v [CHANGELOG.md](CHANGELOG.md) ve formátu
+[Keep a Changelog](https://keepachangelog.com/cs/1.1.0/). Text vydání se z něj
+přebírá automaticky. Čísla verzí se řídí
+[Semantic Versioning 2.0.0-rc.2](https://semver.org/spec/v2.0.0-rc.2.html);
+co tvoří veřejné API a kdy se zvedá která část čísla, popisuje
+[CHANGELOG.md › Verzování](CHANGELOG.md#verzování).
 
 ---
 

@@ -13,6 +13,10 @@ vi.mock("./api", () => ({
   openApp: vi.fn(() => Promise.resolve()),
   clearHistory: vi.fn(() => Promise.resolve()),
   onSnapshot: vi.fn(() => () => {}),
+  updateStatus: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  checkForUpdate: vi.fn(() => Promise.resolve({ phase: "upToDate", current: "0.6.0", version: null, notes: null, date: null, progress: null, error: null, checkedAt: null, auto: true })),
+  installUpdate: vi.fn(() => Promise.resolve()),
+  onUpdate: vi.fn(() => () => {}),
   feedbackStatus: vi.fn(() => new Promise(() => {})),
   sendFeedback: vi.fn(),
   onOpenFeedback: vi.fn(() => () => {}),
@@ -165,6 +169,7 @@ describe("AppWindow · Nastavení", () => {
       excludedEntrypoints: ["cli"],
       clickThrough: false,
       widgetTransparency: 0,
+      checkUpdates: true,
     });
     expect(await screen.findByText("Uloženo.")).toBeInTheDocument();
   });

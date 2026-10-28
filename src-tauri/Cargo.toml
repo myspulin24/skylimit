@@ -1,6 +1,6 @@
 [package]
 name = "skylimit"
-version = "0.5.0"
+version = "0.6.0"
 description = "Skylimit – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
 edition.workspace = true
 license.workspace = true
@@ -26,6 +26,8 @@ tauri-plugin-single-instance = "2"
 # Feedback goes to the Worker over HTTPS (same stack as the core's ČNB fetch).
 reqwest.workspace = true
 rustls.workspace = true
+# Updates from GitHub Releases, verified against the pubkey in tauri.conf.json.
+tauri-plugin-updater = "2"
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }

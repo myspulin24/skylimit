@@ -1,8 +1,13 @@
 # Vydání nové verze (postup převzatý z Pilcrow).
 #
-# Spustí se na tag `v*` (například `v0.4.0`): projdou testy, založí se koncept
+# Spustí se na tag `v*` (například `v0.6.0`): projdou testy, založí se koncept
 # vydání s poznámkami z CHANGELOG.md, sestaví se instalátory pro Windows,
-# macOS a Linux a teprve když jsou uvnitř všechny tři, vydání se zveřejní.
+# macOS a Linux, podepíšou se balíčky pro updater a přidá se `latest.json`.
+# Teprve když jsou uvnitř všechny tři platformy, vydání se zveřejní; tím ho
+# updater v aplikaci uvidí jako `releases/latest`.
+#
+# Soukromý klíč updateru je jen v secrets tohoto repozitáře a v
+# ~/.skylimit-keys na stroji autora, nikdy v repozitáři.
 #
 # Tag se vytváří až po zeleném `ci` na stejném commitu.
 
@@ -55,9 +60,12 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       release_id: ${{ steps.create.outputs.id }}
+      notes: ${{ steps.notes.outputs.notes }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      # SemVer 2.0.0-rc.2, pravidlo 9: verze s pomlčkou (`v0.7.0-rc.1`) je předběžná.
+      PRERELEASE: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -68,7 +76,18 @@ jobs:
           node-version: 24
 
       # Poznámky se berou z CHANGELOG.md. Když sekce k verzi chybí, skončí to
-      # tady a nic se nevydá.
+      # tady a nic se nevydá. Stejný text ukáže aplikace u aktualizace.
+      - name: Poznámky z CHANGELOG.md
+        id: notes
+        run: |
+          set -eu
+          NOTES=$(node scripts/changelog.mjs "${TAG#v}")
+          {
+            echo 'notes<<CHANGELOG_EOF'
+            echo "$NOTES"
+            echo 'CHANGELOG_EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: Založit koncept vydání
         id: create
         run: |
@@ -92,7 +111,7 @@ jobs:
                    -f "tag_name=$TAG" \
                    -f "name=Skylimit ${TAG#v}" \
                    -F "body=@/tmp/notes.md" \
-                   -F draft=true -F prerelease=false \
+                   -F draft=true -F "prerelease=$PRERELEASE" \
                    --jq .id)
           fi
           if [ -z "$id" ]; then
@@ -143,21 +162,34 @@ jobs:
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           # Nahrává se do vydání, které už existuje; jméno ani text se tu
           # neuvádí, o obojí se postaral `create-release`.
           releaseId: ${{ needs.create-release.outputs.release_id }}
-          args: ${{ matrix.args }}
+          # Každý job přidá do `latest.json` svoje platformy; tauri-action je
+          # slučuje s tím, co v něm už je.
+          includeUpdaterJson: true
+          # Do `latest.json` se `notes` berou odsud, ne z textu vydání.
+          releaseBody: ${{ needs.create-release.outputs.notes }}
+          # `tauri.release.conf.json` zapíná podepsané balíčky pro updater jen
+          # tady; místní `npm run package` je nepotřebuje, a tak ani klíč.
+          args: ${{ matrix.args }} --config src-tauri/tauri.release.conf.json
 
   # Koncept zveřejnit až ve chvíli, kdy jsou uvnitř všechny tři platformy.
+  # Předběžná verze vyjde jako pre-release a nestane se `latest`, takže ji
+  # updater v aplikaci (dívá se na `releases/latest`) nenabídne.
   publish:
     needs: [create-release, build]
     runs-on: ubuntu-22.04
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PRERELEASE: ${{ contains(github.event.inputs.tag || github.ref_name, '-') }}
     steps:
       - name: Zveřejnit vydání
         run: |
+          if [ "$PRERELEASE" = "true" ]; then LATEST=false; else LATEST=true; fi
           gh api -X PATCH \
             "repos/$GITHUB_REPOSITORY/releases/${{ needs.create-release.outputs.release_id }}" \
-            -F draft=false -F prerelease=false -f make_latest=true
+            -F draft=false -F "prerelease=$PRERELEASE" -f "make_latest=$LATEST"

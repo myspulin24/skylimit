@@ -13,7 +13,7 @@ import {
   type FixtureName,
 } from "./fixtures";
 import { PROVIDER_NAME } from "./format";
-import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot } from "./types";
+import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
 
 const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -124,6 +124,59 @@ export async function sendFeedback(request: FeedbackRequest): Promise<FeedbackRe
   console.info("[mock] zpětná vazba (neodesláno):", request);
   await new Promise((r) => setTimeout(r, 500));
   return { id: Math.random().toString(16).slice(2, 10) };
+}
+
+// `?update=1` pretends GitHub has a newer version, so the banner, the widget
+// dot and the install flow can be clicked through in the browser.
+const offerUpdate = typeof location !== "undefined" && new URLSearchParams(location.search).get("update") === "1";
+let update: UpdateStatus = {
+  phase: offerUpdate ? "available" : "upToDate",
+  current: __APP_VERSION__,
+  version: offerUpdate ? "9.9.0" : null,
+  notes: offerUpdate
+    ? [
+        "### Přidáno",
+        "",
+        "- **Ukázková novinka.** Takhle vypadají poznámky k vydání",
+        "  převzaté z CHANGELOG.md.",
+        "- Druhý bod.",
+      ].join("\n")
+    : null,
+  date: offerUpdate ? nowSec() - 3600 : null,
+  progress: null,
+  error: null,
+  checkedAt: nowSec() - 300,
+  auto: true,
+};
+const updateListeners = new Set<(s: UpdateStatus) => void>();
+function setUpdate(patch: Partial<UpdateStatus>) {
+  update = { ...update, ...patch };
+  for (const cb of updateListeners) cb(clone(update));
+}
+
+export async function updateStatus(): Promise<UpdateStatus> {
+  return clone(update);
+}
+
+export async function checkForUpdate(): Promise<UpdateStatus> {
+  setUpdate({ phase: "checking" });
+  await new Promise((r) => setTimeout(r, 600));
+  setUpdate({ phase: offerUpdate ? "available" : "upToDate", checkedAt: nowSec() });
+  return clone(update);
+}
+
+/** Simulated download; the browser cannot install anything. */
+export async function installUpdate(): Promise<void> {
+  for (let p = 0; p <= 1.0001; p += 0.2) {
+    setUpdate({ phase: "downloading", progress: Math.min(1, p) });
+    await new Promise((r) => setTimeout(r, 250));
+  }
+  setUpdate({ phase: "error", progress: null, error: "V prohlížeči se instalovat nedá (ukázková data)." });
+}
+
+export function subscribeUpdate(cb: (s: UpdateStatus) => void): () => void {
+  updateListeners.add(cb);
+  return () => updateListeners.delete(cb);
 }
 
 export async function openFeedback(): Promise<void> {

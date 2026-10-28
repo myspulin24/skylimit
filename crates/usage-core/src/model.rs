@@ -313,6 +313,8 @@ pub struct Settings {
     pub click_through: bool,
     /// Widget background transparency in percent, 0..=WIDGET_TRANSPARENCY_MAX.
     pub widget_transparency: u8,
+    /// Look for a new version on GitHub after start and every 6 hours.
+    pub check_updates: bool,
 }
 
 /// Above this the panel would vanish and the text lose its backdrop.
@@ -327,6 +329,7 @@ impl Default for Settings {
             excluded_entrypoints: Vec::new(),
             click_through: false,
             widget_transparency: 0,
+            check_updates: true,
         }
     }
 }
@@ -347,7 +350,8 @@ mod tests {
                 "codexEstimateInScore": true,
                 "excludedEntrypoints": [],
                 "clickThrough": false,
-                "widgetTransparency": 0
+                "widgetTransparency": 0,
+                "checkUpdates": true
             })
         );
     }

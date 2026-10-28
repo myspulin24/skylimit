@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "app",
-  "description": "Okno aplikace. Smí číst snímek a nastavení, ukládat nastavení, přepínat průchod kliknutí, měnit průhlednost widgetu, smazat historii a poslat zpětnou vazbu (adresu určuje Rust, ne webview); poslouchá událost \"snapshot\". Soubory, procesy ani síť webview přímo nevolá.",
+  "description": "Okno aplikace. Smí číst snímek a nastavení, ukládat nastavení, přepínat průchod kliknutí, měnit průhlednost widgetu, smazat historii, poslat zpětnou vazbu (adresu určuje Rust, ne webview) a zkontrolovat a nainstalovat aktualizaci (ověřuje Rust podle klíče v tauri.conf.json); poslouchá událost \"snapshot\". Soubory, procesy ani síť webview přímo nevolá.",
   "windows": ["app"],
   "permissions": [
     "core:event:allow-listen",
@@ -13,6 +13,9 @@
     "allow-set-widget-transparency",
     "allow-clear-history",
     "allow-feedback-status",
-    "allow-feedback-send"
+    "allow-feedback-send",
+    "allow-update-status",
+    "allow-update-check",
+    "allow-update-install"
   ]
 }
