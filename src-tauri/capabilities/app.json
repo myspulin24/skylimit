@@ -1,7 +1,7 @@
 {
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "app",
-  "description": "Okno aplikace. Smí číst snímek a nastavení, ukládat nastavení, přepínat průchod kliknutí, měnit průhlednost widgetu, smazat historii, poslat zpětnou vazbu (adresu určuje Rust, ne webview) a zkontrolovat a nainstalovat aktualizaci (ověřuje Rust podle klíče v tauri.conf.json) a připojit nebo odpojit Claude Code (Rust mění jen klíč statusLine v jeho settings.json); poslouchá událost \"snapshot\". Soubory, procesy ani síť webview přímo nevolá.",
+  "description": "Okno aplikace. Smí číst snímek a nastavení, ukládat nastavení, přepínat průchod kliknutí, měnit průhlednost widgetu, smazat historii, poslat zpětnou vazbu (adresu určuje Rust, ne webview) a zkontrolovat a nainstalovat aktualizaci (ověřuje Rust podle klíče v tauri.conf.json) a připojit nebo odpojit Claude Code (Rust mění jen klíč statusLine v jeho settings.json) a zapnout nebo vypnout spouštění po přihlášení (Rust zapisuje jen záznam Skylimitu do seznamu po spuštění systému); poslouchá událost \"snapshot\". Soubory, procesy ani síť webview přímo nevolá.",
   "windows": ["app"],
   "permissions": [
     "core:event:allow-listen",
@@ -19,6 +19,8 @@
     "allow-update-install",
     "allow-claude-code-status",
     "allow-claude-code-connect",
-    "allow-claude-code-disconnect"
+    "allow-claude-code-disconnect",
+    "allow-autostart-status",
+    "allow-autostart-set"
   ]
 }

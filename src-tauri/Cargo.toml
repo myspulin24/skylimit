@@ -1,6 +1,6 @@
 [package]
 name = "skylimit"
-version = "0.8.0"
+version = "0.9.0"
 description = "Skylimit – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
 edition.workspace = true
 license.workspace = true
@@ -32,7 +32,7 @@ rustls.workspace = true
 tauri-plugin-updater = "2"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Storage_FileSystem"] }
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Storage_FileSystem", "Win32_System_Registry"] }
 
 [dev-dependencies]
 tempfile.workspace = true

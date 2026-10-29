@@ -1,10 +1,13 @@
 // Settings tab of the app window. Edits a local draft; "Uložit" sends the whole
 // Settings object to the core. Click-through and widget transparency apply
 // immediately because the user wants to see the widget react while the app
-// window is open. Two columns on wide windows, one below 980 px (app.css).
+// window is open; so does starting at login (AutostartCheck), which lives in
+// the system, not in Settings. Two columns on wide windows, one below 980 px
+// (app.css).
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { clearHistory, getSettings, setClickThrough, setSettings, setWidgetTransparency } from "./api";
+import { AutostartCheck } from "./AutostartCheck";
 import { ClaudeCodeCard } from "./ClaudeCodeCard";
 import { PROVIDER_NAME, sourceLabel } from "./format";
 import { FeedbackIcon } from "./icons";
@@ -327,6 +330,7 @@ export function SettingsForm({
             Průchod kliknutí (widget nereaguje na myš)
           </label>
           <p className="hint">Vypnout jde i z ikony v oznamovací oblasti.</p>
+          <AutostartCheck />
         </section>
 
         <section className="card settings-card about">

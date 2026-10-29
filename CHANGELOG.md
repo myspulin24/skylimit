@@ -58,6 +58,26 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.9.0] — 2026-10-29
+
+### Přidáno
+
+- **Spouštění po přihlášení.** V **Nastavení › Widget** přibyla volba
+  **Spouštět po přihlášení do počítače**. Když ji zaškrtneš, Skylimit se
+  spustí sám, jakmile se přihlásíš do Windows, macOS nebo Linuxu, a widget
+  naskočí na své místo. Projeví se hned, výchozí stav je vypnuto.
+- Vypnout jde i přímo v systému. Vypnutí ve Správci úloh › Aplikace po
+  spuštění nebo v seznamu aplikací po spuštění v GNOME či KDE Skylimit pozná
+  a ukáže volbu jako vypnutou.
+
+### Zabezpečení
+
+- Spouštění po přihlášení zapisuje jen po zaškrtnutí a jen jeden vlastní
+  záznam s cestou ke Skylimitu: na Windows hodnotu `Skylimit` v klíči `Run`
+  uživatele (odinstalátor ji smaže), na macOS
+  `~/Library/LaunchAgents/cz.myspulin.skylimit.plist`, na Linuxu
+  `~/.config/autostart/cz.myspulin.skylimit.desktop`.
+
 ## [0.8.0] — 2026-10-29
 
 ### Přidáno
@@ -275,7 +295,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.8.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/myspulin24/skylimit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/myspulin24/skylimit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/myspulin24/skylimit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/myspulin24/skylimit/compare/v0.5.0...v0.6.0

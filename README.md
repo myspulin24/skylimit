@@ -94,6 +94,9 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
 - **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned, **bublina**
   otevře okno se zpětnou vazbou.
 - **Průhlednost** (0–90 %) a **průchod kliknutí**, kdy widget nereaguje na myš.
+- **Spouštění po přihlášení** (**Nastavení › Widget**, výchozí stav vypnuto):
+  Skylimit se spustí sám, jakmile se přihlásíš do Windows, macOS nebo Linuxu.
+  Na macOS musí běžet ze složky Aplikace.
 
 ### Nálady
 
@@ -276,6 +279,19 @@ kterých pozná novou odpověď. Pracovní složku, model ani cestu k přepisu
 neukládá. Do `~/.claude/settings.json` zapisuje jen po kliknutí na
 **Připojit** nebo **Odpojit** a jen klíč `statusLine`.
 
+Spouštění po přihlášení zapisuje jen po zaškrtnutí a jen jeden vlastní záznam
+s cestou ke Skylimitu do seznamu, který systém spouští po přihlášení:
+
+| Systém | Záznam |
+| --- | --- |
+| Windows | Hodnota `Skylimit` v `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`; odinstalátor ji smaže |
+| macOS | `~/Library/LaunchAgents/cz.myspulin.skylimit.plist`; systém ho ukáže mezi položkami přihlášení |
+| Linux | `~/.config/autostart/cz.myspulin.skylimit.desktop` |
+
+Vypnout jde i přímo v systému. Vypnutí ve Správci úloh (Windows) nebo
+v seznamu aplikací po spuštění (GNOME, KDE) Skylimit pozná. Před smazáním
+aplikace na macOS nebo Linuxu je dobré spouštění vypnout.
+
 | Funkce | Co odchází | Kdy |
 | --- | --- | --- |
 | Kurz ČNB | Dotaz na veřejnou stránku ČNB | Jednou denně |
@@ -293,7 +309,7 @@ Každé okno smí jen své příkazy (systémem vynucený seznam v
 | Okno | Smí |
 | --- | --- |
 | Widget | Číst snímek, otevřít okno aplikace, vyžádat obnovení dat, přetahovat se |
-| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu, připojit a odpojit Claude Code |
+| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu, připojit a odpojit Claude Code, zapnout a vypnout spouštění po přihlášení |
 
 ---
 

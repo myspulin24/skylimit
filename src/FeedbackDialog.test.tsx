@@ -23,6 +23,8 @@ vi.mock("./api", () => ({
   claudeCodeStatus: vi.fn(() => Promise.resolve({ state: "off", settingsPath: "~/.claude/settings.json", ownStatusLine: false, lastReadingAt: null, problem: "" })),
   connectClaudeCode: vi.fn(),
   disconnectClaudeCode: vi.fn(),
+  autostartStatus: vi.fn(() => Promise.resolve({ state: "off", problem: "" })),
+  setAutostart: vi.fn((on: boolean) => Promise.resolve({ state: on ? "on" : "off", problem: "" })),
 }));
 
 import * as api from "./api";

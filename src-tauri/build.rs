@@ -20,6 +20,8 @@ const COMMANDS: &[&str] = &[
     "claude_code_status",
     "claude_code_connect",
     "claude_code_disconnect",
+    "autostart_status",
+    "autostart_set",
 ];
 
 fn main() {

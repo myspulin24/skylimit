@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
+import type { AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
 
 declare global {
   interface Window {
@@ -169,4 +169,16 @@ export async function connectClaudeCode(): Promise<ClaudeCodeStatus> {
 export async function disconnectClaudeCode(): Promise<ClaudeCodeStatus> {
   if (isTauri()) return invoke<ClaudeCodeStatus>("claude_code_disconnect");
   return (await mock()).disconnectClaudeCode();
+}
+
+/** Settings › Widget: does the system start Skylimit at login? */
+export async function autostartStatus(): Promise<AutostartStatus> {
+  if (isTauri()) return invoke<AutostartStatus>("autostart_status");
+  return (await mock()).autostartStatus();
+}
+
+/** Adds or removes the login entry at once; rejects with a sentence for the user. */
+export async function setAutostart(on: boolean): Promise<AutostartStatus> {
+  if (isTauri()) return invoke<AutostartStatus>("autostart_set", { on });
+  return (await mock()).setAutostart(on);
 }

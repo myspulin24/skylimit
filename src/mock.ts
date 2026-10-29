@@ -13,7 +13,7 @@ import {
   type FixtureName,
 } from "./fixtures";
 import { PROVIDER_NAME } from "./format";
-import type { ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
+import type { AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
 
 const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -240,4 +240,20 @@ export async function disconnectClaudeCode(): Promise<ClaudeCodeStatus> {
   await new Promise((r) => setTimeout(r, 300));
   claudeCode = { ...claudeCode, state: "off", lastReadingAt: null };
   return claudeCode;
+}
+
+// Settings › Widget in the browser: `?autostart=on` starts with it on.
+let autostart: AutostartStatus = {
+  state: new URLSearchParams(location.search).get("autostart") === "on" ? "on" : "off",
+  problem: "",
+};
+
+export async function autostartStatus(): Promise<AutostartStatus> {
+  return autostart;
+}
+
+export async function setAutostart(on: boolean): Promise<AutostartStatus> {
+  await new Promise((r) => setTimeout(r, 150));
+  autostart = { ...autostart, state: on ? "on" : "off" };
+  return autostart;
 }

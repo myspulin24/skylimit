@@ -8,6 +8,7 @@
 //!        └── commands (get/set settings, clear history) ◀── UI
 //! ```
 
+mod autostart;
 mod claude_code;
 mod commands;
 mod feedback;
@@ -57,6 +58,8 @@ pub fn run() {
             claude_code::claude_code_status,
             claude_code::claude_code_connect,
             claude_code::claude_code_disconnect,
+            autostart::autostart_status,
+            autostart::autostart_set,
             updater::update_status,
             updater::update_check,
             updater::update_install,

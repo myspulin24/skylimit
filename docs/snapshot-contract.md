@@ -93,7 +93,8 @@ Tauri commands (shell): `get_snapshot() -> Snapshot`, `get_settings() -> Setting
 `set_settings(settings: Settings)`, `set_click_through(on: bool)`,
 `set_widget_transparency(value: u8)`, `refresh_usage()` (read every source now), `open_app()`,
 `clear_history()`, `claude_code_status() / claude_code_connect() / claude_code_disconnect()
--> ClaudeCodeStatus` (Settings › Claude Code; only the app window). Event `"snapshot"` carries a full `Snapshot` on every change.
+-> ClaudeCodeStatus` (Settings › Claude Code; only the app window), `autostart_status() /
+autostart_set(on: bool) -> AutostartStatus` (Settings › Widget, the system's startup list; only the app window). Event `"snapshot"` carries a full `Snapshot` on every change.
 
 Mood priority (core computes, UI only renders): confused(Unknown) > dozing(Stale) >
 panic(≥95, leave <90) > sweat(≥75, leave <70) > celebrate(4 s) > focus(activity in

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings, fixtures, nowSec } from "./fixtures";
@@ -23,6 +23,8 @@ vi.mock("./api", () => ({
   claudeCodeStatus: vi.fn(() => Promise.resolve({ state: "off", settingsPath: "~/.claude/settings.json", ownStatusLine: false, lastReadingAt: null, problem: "" })),
   connectClaudeCode: vi.fn(),
   disconnectClaudeCode: vi.fn(),
+  autostartStatus: vi.fn(() => Promise.resolve({ state: "off", problem: "" })),
+  setAutostart: vi.fn((on: boolean) => Promise.resolve({ state: on ? "on" : "off", problem: "" })),
 }));
 
 import * as api from "./api";
@@ -201,6 +203,16 @@ describe("AppWindow · Nastavení", () => {
     const user = await openSettings();
     await user.click(screen.getByLabelText("Průchod kliknutí (widget nereaguje na myš)"));
     expect(api.setClickThrough).toHaveBeenCalledWith(true);
+  });
+
+  it("starting at login applies at once and is not part of the saved settings", async () => {
+    const user = await openSettings();
+    const box = screen.getByLabelText("Spouštět po přihlášení do počítače");
+    await waitFor(() => expect(box).toBeEnabled());
+    await user.click(box);
+    expect(api.setAutostart).toHaveBeenCalledWith(true);
+    expect(await screen.findByLabelText("Spouštět po přihlášení do počítače")).toBeChecked();
+    expect(api.setSettings).not.toHaveBeenCalled();
   });
 
   it("clearing history needs an explicit confirmation", async () => {

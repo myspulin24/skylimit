@@ -122,6 +122,13 @@ export interface UpdateStatus {
   auto: boolean;                     // automatic checks on (setting and environment)
 }
 
+/** Settings › Widget: the system starts Skylimit at login (its own startup list). */
+export interface AutostartStatus {
+  /** "moved": the system starts a Skylimit at another path; turning it on switches to this one. */
+  state: "on" | "off" | "moved";
+  problem: string;                   // why it cannot be turned on (macOS app not in Applications)
+}
+
 /** Settings › Claude Code: Skylimit as Claude Code's status line (limits from any terminal). */
 export interface ClaudeCodeStatus {
   /** "missing": no ~/.claude here; "moved": connected to a Skylimit at another path. */
