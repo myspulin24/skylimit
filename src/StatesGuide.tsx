@@ -134,7 +134,7 @@ const SOURCES: { title: string; text: string }[] = [
   },
   {
     title: "Limit Fable",
-    text: "Menší řádek pod týdnem Claude: týdenní limit jen pro Fable, pokud ho tvůj tarif má. Bere se ze stejné mezipaměti Claude Code a zešedne jen po práci s Fable, ne s jinými modely.",
+    text: "Řádek Claude · Fable pod týdnem Claude: týdenní limit jen pro Fable, pokud ho tvůj tarif má. Bere se ze stejné mezipaměti Claude Code a zešedne jen po práci s Fable, ne s jinými modely.",
   },
   {
     title: "Skóre Claude",

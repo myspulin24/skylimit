@@ -58,7 +58,7 @@
      and shrink when notes under the limits need more (two notes and the
      Fable row still fit) */
   flex: 1 1 136px;
-  min-height: 56px;
+  min-height: 44px;
   max-height: 176px;
   padding: 4px 4px 6px;
   border-radius: var(--radius-l);
@@ -116,10 +116,12 @@
   flex: none;
 }
 
+/* 5 px between rows: six rows (Claude 5h, week, Fable; Codex 5h, week)
+   plus two notes still fit the 480 px window. */
 .limit-group {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 5px;
 }
 
 .limit-off {
@@ -206,41 +208,6 @@
   opacity: 0.8;
 }
 
-/* Per-model weekly window (Claude · Fable) tucked under the weekly row on a
-   single line: indented to the label text, smaller type, thin bar between
-   the name and the value. */
-.limit-row.is-nested {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: -3px;
-  padding-left: 15px;
-  font-size: 11.5px;
-  line-height: 15px;
-}
-
-.is-nested .limit-name {
-  font-weight: 500;
-  color: var(--ink-2);
-}
-
-.is-nested .limit-sub {
-  flex: 0 1 auto;
-}
-
-.is-nested .bar {
-  flex: 1 1 40px;
-  height: 3px;
-  margin-top: 0;
-}
-
-.is-nested .limit-value {
-  min-width: 30px;
-  font-weight: 600;
-  text-align: right;
-  color: var(--ink-2);
-}
-
 /* no value at all: hatched empty track */
 .bar--unknown {
   background: repeating-linear-gradient(-45deg, rgba(255, 255, 255, 0.11) 0 3px, rgba(255, 255, 255, 0.03) 3px 6px);
@@ -248,7 +215,7 @@
 
 .limit-note {
   margin: 0;
-  padding: 5px 9px;
+  padding: 4px 9px;
   border: 1px dashed var(--line-strong);
   border-radius: 8px;
   font-size: 11px;

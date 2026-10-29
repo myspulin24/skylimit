@@ -89,7 +89,7 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
 
 - **Limity 5h a týden** pro Claude i Codex: procenta, odpočet do resetu
   a barva podle zaplnění (zelená, od 75 % oranžová, od 95 % červená).
-  Pod týdenním limitem Claude je menší řádek **Fable**, pokud má účet na
+  Pod týdenním limitem Claude je řádek **Claude · Fable**, pokud má účet na
   Fable vlastní týdenní limit.
 - **Skóre měsíce v cenách API** s násobkem paušálu („vytěženo 4,6×“)
   a křivkou po dnech.

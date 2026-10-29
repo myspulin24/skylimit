@@ -1,7 +1,7 @@
 // The always-on-top widget: mascots first, limits second, score third
 // (order of the approved wireframe). Renders only what the core sends.
 
-import { Fragment, useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { openApp, openFeedback, refreshUsage } from "./api";
 import { Character } from "./Character";
 import { FeedbackIcon } from "./icons";
@@ -141,30 +141,15 @@ function ProviderLimitRows({ limits, nowSec }: { limits: ProviderLimits; nowSec:
     );
   }
 
-  const windows = limits.windows.filter((w) => w.kind === "5h" || w.kind === "week");
-  // Claude's weekly Fable limit sits right under the weekly row, smaller.
-  const models = provider === "claude" ? limits.windows.filter((w) => w.kind === "weekModel") : [];
-  const week = windows.find((w) => w.kind === "week");
+  // Claude's weekly Fable limit is a row like the others, right after the week.
+  const windows = limits.windows.filter(
+    (w) => w.kind === "5h" || w.kind === "week" || (provider === "claude" && w.kind === "weekModel"),
+  );
   const showNote = limits.note && limits.state !== "known";
   return (
     <div className={`limit-group limits-${limits.state}`}>
       {windows.length > 0 ? (
-        windows.map((w) => (
-          <Fragment key={`${w.kind}-${w.label}`}>
-            <LimitRow provider={provider} win={w} nowSec={nowSec} />
-            {w.kind === "week" &&
-              models.map((m) => (
-                <LimitRow
-                  key={`model-${m.label}`}
-                  provider={provider}
-                  win={m}
-                  nowSec={nowSec}
-                  nested
-                  sameResetAs={week?.resetsAt ?? null}
-                />
-              ))}
-          </Fragment>
-        ))
+        windows.map((w) => <LimitRow key={`${w.kind}-${w.label}`} provider={provider} win={w} nowSec={nowSec} />)
       ) : (
         <LimitRow
           provider={provider}
@@ -177,17 +162,7 @@ function ProviderLimitRows({ limits, nowSec }: { limits: ProviderLimits; nowSec:
   );
 }
 
-interface LimitRowProps {
-  provider: Provider;
-  win: LimitWindow;
-  nowSec: number;
-  /** A per-model window under the weekly row: smaller, labelled by the model alone. */
-  nested?: boolean;
-  /** The weekly row's reset; a nested row with the same one skips its countdown. */
-  sameResetAs?: number | null;
-}
-
-function LimitRow({ provider, win, nowSec, nested = false, sameResetAs = null }: LimitRowProps) {
+function LimitRow({ provider, win, nowSec }: { provider: Provider; win: LimitWindow; nowSec: number }) {
   const hasValue = win.percent !== null && (win.state === "known" || win.state === "stale");
   const percent = hasValue ? Math.min(100, Math.max(0, win.percent ?? 0)) : 0;
 
@@ -220,32 +195,6 @@ function LimitRow({ provider, win, nowSec, nested = false, sameResetAs = null }:
     .filter(Boolean)
     .join(" ");
 
-  if (nested && win.state === "known" && win.resetsAt !== null && win.resetsAt === sameResetAs) sub = "";
-
-  const bar = (
-    <div className={barClass} aria-hidden="true">
-      {hasValue && <span className="bar-fill" style={{ width: `${percent}%` }} />}
-    </div>
-  );
-
-  // One line under the weekly row: model, (age), bar, value.
-  if (nested) {
-    return (
-      <div className={`limit-row is-nested state-${win.state}`}>
-        <span className="limit-name" title={`Týdenní limit jen pro ${win.label}`}>
-          {win.label}
-        </span>
-        {sub && (
-          <span className="limit-sub" title={sub}>
-            {sub}
-          </span>
-        )}
-        {bar}
-        <span className="limit-value">{value}</span>
-      </div>
-    );
-  }
-
   return (
     <div className={`limit-row state-${win.state}`}>
       <div className="limit-head">
@@ -258,7 +207,9 @@ function LimitRow({ provider, win, nowSec, nested = false, sameResetAs = null }:
         </span>
         <span className="limit-value">{value}</span>
       </div>
-      {bar}
+      <div className={barClass} aria-hidden="true">
+        {hasValue && <span className="bar-fill" style={{ width: `${percent}%` }} />}
+      </div>
     </div>
   );
 }

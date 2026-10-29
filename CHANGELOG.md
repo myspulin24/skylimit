@@ -58,6 +58,13 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.10.1] — 2026-10-29
+
+### Změněno
+
+- Limit Fable ve widgetu vypadá stejně jako ostatní limity: řádek
+  **Claude · Fable** s odpočtem do resetu a plným pruhem.
+
 ## [0.10.0] — 2026-10-29
 
 ### Přidáno
@@ -327,7 +334,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.10.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.10.1...HEAD
+[0.10.1]: https://github.com/myspulin24/skylimit/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/myspulin24/skylimit/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/myspulin24/skylimit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/myspulin24/skylimit/compare/v0.7.0...v0.8.0
