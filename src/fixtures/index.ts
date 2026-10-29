@@ -8,6 +8,7 @@ export const FIXTURE_NAMES = [
   "normal",
   "stale",
   "codexMissing",
+  "codexGone",
   "formatChanged",
   "noPlan",
   "backfill",
@@ -22,6 +23,7 @@ export const FIXTURE_LABEL: Record<FixtureName, string> = {
   normal: "běžný provoz",
   stale: "zastaralé · po resetu",
   codexMissing: "Codex chybí",
+  codexGone: "Codex po restartu nenalezen",
   formatChanged: "formát Claude",
   noPlan: "bez paušálu",
   backfill: "načítání historie",
@@ -189,6 +191,28 @@ function stale(now: number): Snapshot {
   return s;
 }
 
+/** Codex worked before, then the app-server is not found (macOS app relaunched
+ *  without the terminal PATH): last numbers from the database plus a note. The
+ *  tallest limits block the widget has to fit. */
+function codexGone(now: number): Snapshot {
+  const s = normal(now);
+  s.limits[1] = {
+    provider: "codex",
+    state: "stale",
+    governing: 13,
+    windows: [
+      { kind: "5h", label: "5h", percent: 13, resetsAt: now + 3 * HOUR, fetchedAt: now - 11 * MIN, state: "stale" },
+      { kind: "week", label: "týden", percent: 2, resetsAt: now + 6 * DAY, fetchedAt: now - 11 * MIN, state: "stale" },
+    ],
+    note: "Codex CLI nenalezen",
+  };
+  s.moods = [
+    { provider: "claude", mood: "sweat" },
+    { provider: "codex", mood: "dozing" },
+  ];
+  return s;
+}
+
 /** Codex CLI is not installed: limits unknown, no Codex price. */
 function codexMissing(now: number): Snapshot {
   const s = normal(now);
@@ -326,6 +350,7 @@ export const fixtures: Record<FixtureName, (now: number) => Snapshot> = {
   normal,
   stale,
   codexMissing,
+  codexGone,
   formatChanged,
   noPlan,
   backfill,

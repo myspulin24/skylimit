@@ -58,6 +58,27 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.8.0] — 2026-10-29
+
+### Přidáno
+
+- **Snímek obrazovky do zpětné vazby rovnou ze schránky.** V okně
+  **Zpětná vazba** stačí ⌘V nebo Ctrl+V. Obrázek se přiloží s náhledem a jde
+  odebrat. Snímek větší než 2 MB, typicky z Retina displeje, se zmenší na
+  JPEG, místo aby ho aplikace odmítla.
+
+### Opraveno
+
+- **Codex na macOS a Linuxu, když Skylimit neběží z terminálu.** Po
+  aktualizaci, po přihlášení nebo po spuštění z Docku dostane aplikace jen
+  základní `PATH` a Codex CLI z npm (Node přes nvm, Volta, Homebrew) se
+  nenašel: widget hlásil „Codex CLI nenalezen“. Skylimit si teď cestu jednou
+  zjistí z tvého shellu stejně jako terminál a doplní běžná umístění.
+- **Widget s poznámkou pod limity.** Když pod limity přibyla poznámka (třeba
+  „Codex CLI nenalezen“), obsah se nevešel do okna a panel se posunul, takže
+  nahoře chybělo odsazení. Scéna s postavičkami se teď zmenší a panel se už
+  posunout nedá. Vejdou se i dvě poznámky naráz.
+
 ## [0.7.0] — 2026-10-29
 
 ### Přidáno
@@ -254,7 +275,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.7.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.8.0...HEAD
+[0.8.0]: https://github.com/myspulin24/skylimit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/myspulin24/skylimit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/myspulin24/skylimit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/myspulin24/skylimit/compare/v0.4.0...v0.5.0

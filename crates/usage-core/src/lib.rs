@@ -35,6 +35,7 @@ mod pricing;
 mod score;
 mod store;
 mod t3;
+mod user_path;
 
 pub use model::*;
 /// Re-exported so the shell does not need its own `tokio` dependency.
@@ -84,8 +85,15 @@ const LIMIT_HISTORY_DAYS: i64 = 90;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CodexSource {
-    /// Spawn this program speaking the app-server protocol on stdio.
-    Spawn { program: String, args: Vec<String> },
+    /// Spawn this program speaking the app-server protocol on stdio. With
+    /// `login_path`, the child first gets the PATH of the user's interactive
+    /// login shell (`user_path.rs`): a macOS app started outside a terminal
+    /// does not have it, and Codex would not be found.
+    Spawn {
+        program: String,
+        args: Vec<String>,
+        login_path: bool,
+    },
     Disabled,
 }
 
@@ -101,6 +109,7 @@ impl CodexSource {
             CodexSource::Spawn {
                 program: "cmd.exe".into(),
                 args: vec!["/C".into(), "codex".into(), "app-server".into()],
+                login_path: false,
             }
         } else {
             let fallback = if cfg!(target_os = "macos") { "/bin/zsh" } else { "/bin/sh" };
@@ -111,6 +120,7 @@ impl CodexSource {
             CodexSource::Spawn {
                 program: shell,
                 args: vec!["-lc".into(), "exec codex app-server".into()],
+                login_path: true,
             }
         }
     }
@@ -268,12 +278,13 @@ impl Core {
 
         let codex_disabled = config.codex == CodexSource::Disabled;
         let codex_ctl = match &config.codex {
-            CodexSource::Spawn { program, args } => {
+            CodexSource::Spawn { program, args, login_path } => {
                 let (ctl_tx, ctl_rx) = mpsc::channel();
                 children.push(
                     CodexThread {
                         program: program.clone(),
                         args: args.clone(),
+                        login_path: *login_path,
                         core: tx.clone(),
                         ctl: ctl_rx,
                         stop: stop.clone(),

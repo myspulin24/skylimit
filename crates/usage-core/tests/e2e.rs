@@ -80,6 +80,7 @@ impl Env {
     fn fake_codex(&self) -> CodexSource {
         let s = |p: &Path| p.to_string_lossy().to_string();
         CodexSource::Spawn {
+            login_path: false,
             program: "node".into(),
             args: vec![
                 s(&manifest().join("tests/fake-codex/server.mjs")),
@@ -385,6 +386,7 @@ fn e2e_core_with_fake_codex_server() {
     // values come back Stale, and a missing CLI says so.
     env.set_clock(env.now() + 11 * 60);
     let h = Core::start(env.config(CodexSource::Spawn {
+        login_path: false,
         program: "skylimit-test-no-such-codex".into(),
         args: Vec::new(),
     }));
@@ -413,11 +415,13 @@ fn codex_cli_missing_is_unknown_and_confused() {
     // Production shape: the shell wrapper starts, the command inside does not exist.
     let codex = if cfg!(windows) {
         CodexSource::Spawn {
+            login_path: false,
             program: "cmd.exe".into(),
             args: vec!["/C".into(), "skylimit-test-no-such-codex".into(), "app-server".into()],
         }
     } else {
         CodexSource::Spawn {
+            login_path: false,
             program: "skylimit-test-no-such-codex".into(),
             args: vec!["app-server".into()],
         }

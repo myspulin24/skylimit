@@ -27,7 +27,7 @@ vi.mock("./api", () => ({
 
 import * as api from "./api";
 import { AppWindow } from "./AppWindow";
-import { readAttachment } from "./FeedbackDialog";
+import { fitImage, pastedImageFile, readAttachment } from "./FeedbackDialog";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -120,6 +120,54 @@ describe("Zpětná vazba", () => {
     const dialog = await screen.findByRole("dialog", { name: "Zpětná vazba" });
     expect(await within(dialog).findByText("Odeslat teď nejde: adresa není https")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: "Odeslat" })).toBeDisabled();
+  });
+});
+
+describe("Příloha ze schránky", () => {
+  const paste = (target: HTMLElement, blob: Blob | null, text?: string) =>
+    fireEvent.paste(target, {
+      clipboardData: {
+        items: blob ? [{ kind: "file", type: blob.type, getAsFile: () => blob }] : [],
+        getData: () => text ?? "",
+      },
+    });
+
+  it("a pasted screenshot becomes the attachment and is sent", async () => {
+    vi.mocked(api.sendFeedback).mockResolvedValue({ id: "pic1" });
+    const { user, dialog } = await openDialog();
+    const message = within(dialog).getByRole("textbox", { name: "Zpráva" });
+    await user.type(message, "Codex se nepropisuje");
+    paste(message, new Blob(["png-bytes"], { type: "image/png" }));
+    expect(await within(dialog).findByText(/^snimek-\d{4}-\d{2}-\d{2}-\d{6}\.png$/)).toBeInTheDocument();
+    expect(within(dialog).getByRole("img", { name: "Náhled přílohy" })).toBeInTheDocument();
+    expect(message).toHaveValue("Codex se nepropisuje");
+
+    await user.click(within(dialog).getByRole("button", { name: "Odeslat" }));
+    await waitFor(() => expect(api.sendFeedback).toHaveBeenCalledTimes(1));
+    const sent = vi.mocked(api.sendFeedback).mock.calls[0]?.[0];
+    expect(sent?.attachment).toMatchObject({ type: "image/png", data: btoa("png-bytes") });
+    expect(sent?.attachment?.name).toMatch(/^snimek-.*\.png$/);
+  });
+
+  it("text pastes as usual and the attachment can be removed", async () => {
+    const { dialog } = await openDialog();
+    const message = within(dialog).getByRole("textbox", { name: "Zpráva" });
+    expect(paste(message, null, "jen text")).toBe(true);
+    paste(message, new Blob(["x"], { type: "image/jpeg" }));
+    fireEvent.click(await within(dialog).findByRole("button", { name: "Odebrat" }));
+    expect(within(dialog).queryByRole("img", { name: "Náhled přílohy" })).toBeNull();
+  });
+
+  it("names clipboard images and leaves small or undrawable ones as they are", async () => {
+    const at = new Date(2026, 9, 29, 13, 5, 9);
+    expect(pastedImageFile(new Blob(["a"], { type: "image/png" }), at)?.name).toBe("snimek-2026-10-29-130509.png");
+    expect(pastedImageFile(new Blob(["a"], { type: "image/jpeg" }), at)?.name).toBe("snimek-2026-10-29-130509.jpg");
+    expect(pastedImageFile(new Blob(["a"], { type: "image/tiff" }), at)).toBeNull();
+    const small = new File(["a"], "a.png", { type: "image/png" });
+    expect(await fitImage(small)).toBe(small);
+    // jsdom cannot draw; the size check in readAttachment then explains it.
+    const big = new File([new Uint8Array(2 * 1024 * 1024 + 1)], "big.png", { type: "image/png" });
+    expect(await fitImage(big)).toBe(big);
   });
 });
 

@@ -75,7 +75,7 @@ Historie i nastavení zůstanou. Na Linuxu se aktualizuje AppImage, balíček
 | Nástroj | K čemu | Bez něj |
 | --- | --- | --- |
 | [Claude Code](https://code.claude.com) | Skóre Claude ze záznamů v `~/.claude/projects`; po připojení i limity Claude ze stavového řádku | Skóre Claude zůstane prázdné |
-| [Codex CLI](https://github.com/openai/codex), přihlášený | Limity a spotřeba Codexu přes `codex app-server` | Řádky Codexu ukážou „Codex CLI nenalezen“ |
+| [Codex CLI](https://github.com/openai/codex), přihlášený | Limity a spotřeba Codexu přes `codex app-server`. Na macOS a Linuxu si Skylimit cestu k němu zjistí z tvého shellu, i když běží z Docku nebo nabídky | Řádky Codexu ukážou „Codex CLI nenalezen“ |
 | [T3 Code](https://github.com/pingdotgg/t3code) (volitelně) | Limity Claude z jeho logů | Bez T3 Code i bez připojeného Claude Code stojí místo limitů Claude „připoj Claude Code v Nastavení“ |
 
 ---
@@ -129,7 +129,8 @@ v aplikaci ukáže všechny s velkým animovaným náhledem.
   průhlednost widgetu, průchod kliknutí, smazání historie a **O aplikaci**
   (verze, licence).
 - **Zpětná vazba:** formulář pro chybu, změnu nebo vylepšení s volitelnou
-  přílohou. Viz [Soukromí](#soukromí-a-oprávnění).
+  přílohou. Snímek obrazovky jde vložit rovnou ze schránky (⌘V, Ctrl+V).
+  Viz [Soukromí](#soukromí-a-oprávnění).
 
 Snímky v tomto README ukazují smyšlená demo data.
 

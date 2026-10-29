@@ -36,6 +36,7 @@ use serde_json::{json, Value};
 use crate::diag::{json_shape, Diag};
 use crate::model::{LimitWindow, LimitsState, Provider, ProviderLimits, WindowKind, WindowState};
 use crate::mood::Activity;
+use crate::user_path;
 use crate::{Clock, CoreMsg, Update};
 
 const TICK: Duration = Duration::from_millis(250);
@@ -423,12 +424,15 @@ fn read_lines(stdout: ChildStdout, tx: Sender<Option<Value>>) {
     }
 }
 
-fn spawn_process(program: &str, args: &[String]) -> std::io::Result<Proc> {
+fn spawn_process(program: &str, args: &[String], path: Option<&str>) -> std::io::Result<Proc> {
     let mut cmd = Command::new(program);
     cmd.args(args)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
+    if let Some(path) = path {
+        cmd.env("PATH", path);
+    }
     #[cfg(windows)]
     {
         use std::os::windows::process::CommandExt;
@@ -481,6 +485,8 @@ const MANUAL_GAP: i64 = 10;
 pub(crate) struct CodexThread {
     pub program: String,
     pub args: Vec<String>,
+    /// Resolve PATH from the user's login shell before the first start.
+    pub login_path: bool,
     pub core: Sender<CoreMsg>,
     pub ctl: Receiver<CodexCtl>,
     pub stop: Arc<AtomicBool>,
@@ -536,6 +542,8 @@ impl CodexThread {
             prev_buckets: None,
         };
         let mut proc: Option<Proc> = None;
+        // Resolved once, right before the first start (it may take a moment).
+        let mut child_path: Option<Option<String>> = None;
 
         loop {
             match self.ctl.recv_timeout(TICK) {
@@ -563,7 +571,14 @@ impl CodexThread {
 
             let Some(p) = proc.as_mut() else {
                 if now >= s.next_spawn_at {
-                    match spawn_process(&self.program, &self.args) {
+                    let path = child_path
+                        .get_or_insert_with(|| {
+                            self.login_path
+                                .then(|| user_path::for_codex(&self.program, &self.diag, now))
+                                .flatten()
+                        })
+                        .clone();
+                    match spawn_process(&self.program, &self.args, path.as_deref()) {
                         Ok(mut p) => {
                             let id = s.next_id;
                             s.next_id += 1;
@@ -1051,7 +1066,7 @@ mod tests {
         ];
         // Round 0: a healthy server answers initialize, then is told to die.
         std::fs::write(&ctl, "{}").unwrap();
-        let mut p = spawn_process("node", &args).unwrap();
+        let mut p = spawn_process("node", &args, None).unwrap();
         assert!(p.send(&json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})));
         let msg = p.lines.recv_timeout(Duration::from_secs(5)).unwrap().unwrap();
         assert_eq!(msg["id"], 1);
@@ -1060,7 +1075,7 @@ mod tests {
         while p.lines.recv_timeout(Duration::from_secs(5)).unwrap().is_some() {}
         p.teardown();
         for round in 1..4 {
-            let mut p = spawn_process("node", &args).unwrap();
+            let mut p = spawn_process("node", &args, None).unwrap();
             assert!(p.send(&json!({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})));
             let started = Instant::now();
             loop {

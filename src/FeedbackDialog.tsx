@@ -1,9 +1,10 @@
 // "Zpětná vazba": a modal in the app window. The message goes through the
 // shell (feedback_send) to the Worker, which files an issue in a private repo.
-// The dialog shows where it goes before anything is sent; the app adds its
-// version and OS. Nothing is sent without the button.
+// The app adds its version and OS. Nothing is sent without the button. A
+// screenshot can also be pasted from the clipboard; one over 2 MB is redrawn
+// smaller as JPEG instead of being refused.
 
-import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type ClipboardEvent, type FormEvent } from "react";
 import { feedbackStatus, sendFeedback } from "./api";
 import type { FeedbackKind, FeedbackRequest, FeedbackStatus } from "./types";
 
@@ -33,6 +34,16 @@ const ACCEPT = Object.keys(TYPES_BY_EXTENSION)
   .map((e) => `.${e}`)
   .join(",");
 
+const IMAGE_EXTENSION: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/gif": "gif",
+  "image/webp": "webp",
+};
+/** Longest side of a redrawn image: text in a screenshot stays readable. */
+const MAX_SIDE = 2400;
+const PASTE_KEYS = typeof navigator !== "undefined" && /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘V" : "Ctrl+V";
+
 type Attachment = NonNullable<FeedbackRequest["attachment"]>;
 type Phase = { kind: "edit"; error: string | null } | { kind: "sending" } | { kind: "sent"; id: string };
 
@@ -50,6 +61,50 @@ export async function readAttachment(file: File): Promise<Attachment | string> {
   return { name: file.name, type, data: btoa(binary) };
 }
 
+/** A clipboard image as a file named the way the Worker accepts, or `null`. */
+export function pastedImageFile(blob: Blob, now = new Date()): File | null {
+  const extension = IMAGE_EXTENSION[blob.type];
+  if (!extension) return null;
+  const two = (n: number) => String(n).padStart(2, "0");
+  const stamp = `${now.getFullYear()}-${two(now.getMonth() + 1)}-${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
+  return new File([blob], `snimek-${stamp}.${extension}`, { type: blob.type });
+}
+
+/** An image over 2 MB (a Retina screenshot) redrawn as a smaller JPEG; anything
+ *  else, or when the webview cannot draw it, comes back unchanged. */
+export async function fitImage(file: File): Promise<File> {
+  const drawable = /^image\/(png|jpeg|webp)$/.test(file.type);
+  if (file.size <= MAX_ATTACHMENT || !drawable || typeof createImageBitmap !== "function") return file;
+  try {
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_SIDE / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+    canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+    const context = canvas.getContext("2d");
+    if (!context) return file;
+    // JPEG has no transparency; window shadows would turn black.
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close();
+    for (const quality of [0.85, 0.7, 0.55]) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (blob && blob.size <= MAX_ATTACHMENT) {
+        return new File([blob], `${file.name.replace(/\.[^.]+$/, "")}.jpg`, { type: "image/jpeg" });
+      }
+    }
+  } catch {
+    // Not drawable here: readAttachment then explains the size limit.
+  }
+  return file;
+}
+
+function attachmentSize(a: Attachment): string {
+  const bytes = Math.floor((a.data.length * 3) / 4);
+  return bytes < 1024 * 1024 ? `${Math.max(1, Math.round(bytes / 1024))} kB` : `${(bytes / 1024 / 1024).toFixed(1).replace(".", ",")} MB`;
+}
+
 export function FeedbackDialog({ location, onClose }: { location: string; onClose: () => void }) {
   const titleId = useId();
   const [status, setStatus] = useState<FeedbackStatus | null>(null);
@@ -61,6 +116,7 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "edit", error: null });
   const messageRef = useRef<HTMLTextAreaElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let alive = true;
@@ -80,18 +136,38 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
     };
   }, [onClose]);
 
-  const onFile = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const result = await readAttachment(file);
+  const attach = async (file: File) => {
+    const result = await readAttachment(await fitImage(file));
     if (typeof result === "string") {
-      setAttachment(null);
+      removeAttachment();
       setAttachmentError(result);
-      e.target.value = "";
     } else {
       setAttachment(result);
       setAttachmentError(null);
     }
+  };
+
+  const removeAttachment = () => {
+    setAttachment(null);
+    setAttachmentError(null);
+    if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const onFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) void attach(file);
+  };
+
+  // An image in the clipboard becomes the attachment; text pastes as usual.
+  const onPaste = (e: ClipboardEvent<HTMLDivElement>) => {
+    if (phase.kind !== "edit") return;
+    const item = Array.from(e.clipboardData?.items ?? []).find((i) => i.kind === "file" && i.type.startsWith("image/"));
+    const blob = item?.getAsFile();
+    if (!blob) return;
+    e.preventDefault();
+    const file = pastedImageFile(blob);
+    if (file) void attach(file);
+    else setAttachmentError("Tenhle druh obrázku nejde vložit. Jde PNG, JPEG, GIF nebo WebP.");
   };
 
   const onSubmit = async (e: FormEvent) => {
@@ -116,7 +192,7 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
 
   return (
     <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId}>
+      <div className="modal" role="dialog" aria-modal="true" aria-labelledby={titleId} onPaste={onPaste}>
         <div className="modal-head">
           <h2 id={titleId}>Zpětná vazba</h2>
           <button type="button" className="icon-close" aria-label="Zavřít" onClick={onClose}>
@@ -179,8 +255,21 @@ export function FeedbackDialog({ location, onClose }: { location: string; onClos
 
             <label className="field-label">
               Příloha <span className="muted">(nepovinná: obrázek, PDF, log, CSV, JSON nebo text do 2 MB)</span>
-              <input className="file" type="file" accept={ACCEPT} onChange={(e) => void onFile(e)} />
+              <input ref={fileRef} className="file" type="file" accept={ACCEPT} onChange={onFile} />
             </label>
+            <p className="hint attachment-hint">Snímek obrazovky jde vložit i ze schránky ({PASTE_KEYS}).</p>
+            {attachment && (
+              <div className="attachment-chip">
+                {attachment.type.startsWith("image/") && (
+                  <img src={`data:${attachment.type};base64,${attachment.data}`} alt="Náhled přílohy" />
+                )}
+                <span className="attachment-name">{attachment.name}</span>
+                <span className="muted num">{attachmentSize(attachment)}</span>
+                <button type="button" className="btn small" onClick={removeAttachment}>
+                  Odebrat
+                </button>
+              </div>
+            )}
             {attachmentError && <p className="status err">{attachmentError}</p>}
 
             {status && !status.available && <p className="status err">Odeslat teď nejde: {status.error}</p>}

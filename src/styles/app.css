@@ -1148,6 +1148,39 @@ html[data-window="app"] body {
   color: var(--ink-2);
 }
 
+.attachment-hint {
+  margin: 4px 0 0;
+}
+
+.attachment-chip {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--fill-soft);
+  font-size: 12.5px;
+}
+
+.attachment-chip img {
+  flex: none;
+  width: 48px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.attachment-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink-1);
+}
+
 .feedback-where {
   margin: 16px 0 0;
   padding: 10px 12px;

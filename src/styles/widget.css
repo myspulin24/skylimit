@@ -19,6 +19,9 @@
   height: 100%;
   padding: 10px 14px 8px;
   overflow: hidden;
+  /* clip, not just hide: a focused button near the edge must never scroll
+     the panel and cut its top off (seen on macOS with a Codex note) */
+  overflow: clip;
   border: 1px solid rgba(255, 255, 255, calc(0.08 * var(--panel-alpha)));
   border-radius: 18px;
   background:
@@ -51,9 +54,10 @@
   grid-template-columns: 1fr 1fr;
   grid-template-rows: minmax(0, 1fr);
   gap: 4px;
-  /* takes the free height, so the mascots grow when the data needs less room */
+  /* takes the free height, so the mascots grow when the data needs less room
+     and shrink when notes under the limits need more (two notes still fit) */
   flex: 1 1 136px;
-  min-height: 128px;
+  min-height: 72px;
   max-height: 176px;
   padding: 4px 4px 6px;
   border-radius: var(--radius-l);
