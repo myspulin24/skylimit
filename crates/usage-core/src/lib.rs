@@ -9,6 +9,7 @@
 //!  codex app-server (Job Object) ──JSON-RPC────▶ codex.rs  ─┤ Update
 //!  T3 Code provider logs ───────5 s poll───────▶ t3.rs     ─┤ claude_limits.rs
 //!  Claude Code status line files ─5 s poll────▶ claude_code.rs ┤
+//!  Claude Code ~/.claude.json ──5 s, on change▶ claude_config.rs┤
 //!  ČNB daily fixing (≤ 1×/day) ────────────────▶ fx.rs     ─┤
 //!                                                           ▼
 //!             core thread: store.rs ─▶ pricing.rs ─▶ score.rs ─▶ mood.rs
@@ -20,11 +21,13 @@
 //! (terms gate): they come from the `rate_limit_event` messages the official
 //! Claude Agent SDK hands to T3 Code, which logs them locally (`t3.rs`), and
 //! from the `rate_limits` Claude Code passes to its status line command
-//! (`claude_code.rs`). Without either they are Off and Claude's mood comes
-//! from score and activity only.
+//! (`claude_code.rs`), and from the limits Claude Code caches in its global
+//! config (`claude_config.rs`, also the weekly Fable limit). Without any of
+//! them they are Off and Claude's mood comes from score and activity only.
 
 mod claude;
 pub mod claude_code;
+pub mod claude_config;
 mod claude_limits;
 mod codex;
 mod diag;
@@ -148,6 +151,9 @@ pub struct Config {
     /// exists only while Claude Code is connected. Both `None` = Claude
     /// limits Off.
     pub claude_code_dir: Option<PathBuf>,
+    /// Claude Code's `.claude.json` (see [`claude_config`]): the limits
+    /// Claude Code caches for itself, the only source of the Fable limit.
+    pub claude_config_file: Option<PathBuf>,
     pub diag_dir: PathBuf,
     pub codex: CodexSource,
     /// Initial settings; persisting them is the shell's job.
@@ -165,6 +171,7 @@ impl Config {
             db_path,
             t3_logs_dir: None,
             claude_code_dir: None,
+            claude_config_file: None,
             diag_dir,
             codex: CodexSource::official(),
             settings: Settings::default(),
@@ -187,7 +194,8 @@ pub(crate) enum Update {
     Codex(CodexEvent),
     ClaudeLimits {
         sources: Sources,
-        reading: Option<ClaudeReading>,
+        /// New readings, at most one per source.
+        readings: Vec<ClaudeReading>,
     },
     Fx {
         day: FxDay,
@@ -261,11 +269,14 @@ impl Core {
         );
 
         let (claude_limits_wake, wake_rx) = mpsc::channel();
-        if config.t3_logs_dir.is_some() || config.claude_code_dir.is_some() {
+        let claude_limit_sources =
+            config.t3_logs_dir.is_some() || config.claude_code_dir.is_some() || config.claude_config_file.is_some();
+        if claude_limit_sources {
             children.push(
                 ClaudeLimitsThread {
                     t3_dir: config.t3_logs_dir.clone(),
                     code_dir: config.claude_code_dir.clone(),
+                    config_file: config.claude_config_file.clone(),
                     core: tx.clone(),
                     wake: wake_rx,
                     stop: stop.clone(),
@@ -318,18 +329,25 @@ impl Core {
         let mut codex = CodexView::new(codex_disabled);
         restore_codex(&store, &mut codex, now);
         let present = |dir: &Option<PathBuf>| dir.as_deref().is_some_and(|d| d.is_dir());
+        let (reading, fable) = if claude_limit_sources {
+            restore_claude_limits(&store, now)
+        } else {
+            (None, None)
+        };
         let claude_limits = ClaudeLimitsView {
             available: Sources {
                 t3: present(&config.t3_logs_dir),
                 code: present(&config.claude_code_dir),
             },
-            reading: (config.t3_logs_dir.is_some() || config.claude_code_dir.is_some())
-                .then(|| restore_claude_limits(&store, now))
-                .flatten(),
+            reading,
+            fable,
         };
+        let codex_account = Arc::new(Mutex::new(codex.account()));
         let state = CoreState {
             fx: store.latest_fx().unwrap_or_else(FxDay::fallback),
             claude_last_ts: store.meta_get("claude_last_ts").and_then(|v| v.parse().ok()),
+            claude_fable_last_ts: store.meta_get("claude_fable_last_ts").and_then(|v| v.parse().ok()),
+            codex_account: codex_account.clone(),
             claude_dir_exists: config.claude_projects_dir.is_dir(),
             clock,
             diag,
@@ -374,6 +392,7 @@ impl Core {
             tx,
             snapshot: snap_rx,
             settings,
+            codex_account,
             stop,
             thread: Some(thread),
         }
@@ -384,6 +403,8 @@ pub struct CoreHandle {
     tx: Sender<CoreMsg>,
     snapshot: watch::Receiver<Snapshot>,
     settings: Arc<Mutex<Settings>>,
+    /// Kept apart from the snapshot: the e-mail never goes to the widget.
+    codex_account: Arc<Mutex<Option<CodexAccount>>>,
     stop: Arc<AtomicBool>,
     thread: Option<JoinHandle<()>>,
 }
@@ -400,6 +421,11 @@ impl CoreHandle {
 
     pub fn settings(&self) -> Settings {
         self.settings.lock().map(|s| s.clone()).unwrap_or_default()
+    }
+
+    /// The account the Codex CLI is signed in with (Settings › Účty).
+    pub fn codex_account(&self) -> Option<CodexAccount> {
+        self.codex_account.lock().map(|a| a.clone()).unwrap_or_default()
     }
 
     pub fn set_settings(&self, settings: Settings) {
@@ -489,6 +515,7 @@ fn restore_codex(store: &Store, codex: &mut CodexView, now: i64) {
                 primary: window("5h"),
                 secondary: window("week"),
                 extra: Vec::new(),
+                account: Default::default(),
             });
         }
     }
@@ -505,26 +532,37 @@ fn restore_codex(store: &Store, codex: &mut CodexView, now: i64) {
     }
 }
 
-/// Last Claude limits reading from the database (T3 Code logs rotate away,
-/// Claude Code sessions end).
-fn restore_claude_limits(store: &Store, now: i64) -> Option<ClaudeReading> {
-    let rows = store.latest_limit_snapshot("claude");
-    let at = rows.first().map(|r| r.ts).filter(|ts| now - ts < LIMIT_HISTORY_DAYS * 86_400)?;
-    let window = |name: &str| {
-        rows.iter().find(|r| r.win == name).and_then(|r| {
-            r.percent.map(|percent| ClaudeWindow {
-                percent,
-                resets_at: r.resets_at,
-            })
+/// Last Claude limits from the database (T3 Code logs rotate away, Claude
+/// Code sessions end): the 5h and weekly reading, and the Fable window,
+/// which has its own time.
+fn restore_claude_limits(store: &Store, now: i64) -> (Option<ClaudeReading>, Option<(i64, ClaudeWindow)>) {
+    let recent = |ts: i64| now - ts < LIMIT_HISTORY_DAYS * 86_400;
+    let window = |r: &store::LimitRow| {
+        r.percent.map(|percent| ClaudeWindow {
+            percent,
+            resets_at: r.resets_at,
         })
     };
-    let reading = ClaudeReading {
-        at,
-        five_hour: window("5h"),
-        seven_day: window("week"),
-    };
-    (reading.five_hour.is_some() || reading.seven_day.is_some()).then_some(reading)
+    let rows = store.latest_limit_snapshot("claude");
+    let reading = rows.first().map(|r| r.ts).filter(|ts| recent(*ts)).and_then(|at| {
+        let named = |name: &str| rows.iter().find(|r| r.win == name).and_then(window);
+        let reading = ClaudeReading {
+            at,
+            five_hour: named("5h"),
+            seven_day: named("week"),
+            fable: None,
+        };
+        reading.has_main().then_some(reading)
+    });
+    let fable = store
+        .latest_limit_row("claude", FABLE_WIN)
+        .filter(|r| recent(r.ts))
+        .and_then(|r| Some((r.ts, window(&r)?)));
+    (reading, fable)
 }
+
+/// Window name of the weekly Fable limit in `limit_snapshots`.
+const FABLE_WIN: &str = "fable";
 
 struct CoreState {
     clock: Clock,
@@ -545,6 +583,11 @@ struct CoreState {
     backfill: Backfill,
     claude_dir_exists: bool,
     claude_last_ts: Option<i64>,
+    /// Newest assistant line of a Fable model: only Fable work ages the
+    /// weekly Fable window.
+    claude_fable_last_ts: Option<i64>,
+    /// What `CoreHandle::codex_account` returns; rewritten on Codex events.
+    codex_account: Arc<Mutex<Option<CodexAccount>>>,
     /// (line time, has usage) of assistant lines from the last hour.
     health: Vec<(i64, bool)>,
 
@@ -657,6 +700,19 @@ impl CoreState {
                         self.dirty = true;
                     }
                 }
+                let newest_fable = b
+                    .records
+                    .iter()
+                    .filter(|r| r.ts <= now + 300 && r.model.to_ascii_lowercase().contains("fable"))
+                    .map(|r| r.ts)
+                    .max();
+                if let Some(ts) = newest_fable {
+                    if self.claude_fable_last_ts.is_none_or(|t| ts > t) {
+                        self.claude_fable_last_ts = Some(ts);
+                        let _ = self.store.meta_set("claude_fable_last_ts", &ts.to_string());
+                        self.dirty = true;
+                    }
+                }
                 if !b.health.is_empty() {
                     self.health.extend(b.health);
                     self.dirty = true;
@@ -710,22 +766,32 @@ impl CoreState {
                     _ => {}
                 }
                 self.codex.apply(&ev);
+                self.publish_codex_account();
                 self.dirty = true;
             }
-            Update::ClaudeLimits { sources, reading } => {
+            Update::ClaudeLimits { sources, readings } => {
                 self.claude_limits.available = sources;
-                if let Some(r) = reading {
-                    if self.claude_limits.reading.as_ref().is_none_or(|old| r.at > old.at) {
-                        for (win, w) in [("5h", &r.five_hour), ("week", &r.seven_day)] {
-                            let _ = self.store.add_limit_snapshot(
-                                r.at,
-                                "claude",
-                                win,
-                                w.as_ref().map(|w| w.percent),
-                                w.as_ref().and_then(|w| w.resets_at),
-                            );
-                        }
-                        self.claude_limits.reading = Some(r);
+                for r in readings {
+                    let at = r.at;
+                    let (main, fable) = self.claude_limits.take(r);
+                    let mut rows = Vec::new();
+                    if let Some(r) = self.claude_limits.reading.as_ref().filter(|_| main) {
+                        rows.push(("5h", r.five_hour.clone()));
+                        rows.push(("week", r.seven_day.clone()));
+                    }
+                    if let Some((_, w)) = self.claude_limits.fable.as_ref().filter(|_| fable) {
+                        rows.push((FABLE_WIN, Some(w.clone())));
+                    }
+                    for (win, w) in rows {
+                        let _ = self.store.add_limit_snapshot(
+                            at,
+                            "claude",
+                            win,
+                            w.as_ref().map(|w| w.percent),
+                            w.as_ref().and_then(|w| w.resets_at),
+                        );
+                    }
+                    if main || fable {
                         self.last_change_at = now;
                     }
                 }
@@ -766,13 +832,21 @@ impl CoreState {
         };
         self.health.clear();
         self.claude_last_ts = None;
+        self.claude_fable_last_ts = None;
         self.codex.usage_seen = false;
         self.codex.summary = None;
+        self.publish_codex_account();
         self.queue.clear();
         self.current = None;
         self.milestones_primed = false;
         self.last_change_at = now;
         self.dirty = true;
+    }
+
+    fn publish_codex_account(&self) {
+        if let Ok(mut a) = self.codex_account.lock() {
+            *a = self.codex.account();
+        }
     }
 
     fn publish(&mut self) {
@@ -866,7 +940,7 @@ impl CoreState {
         let conv = self.fx.usd_to(settings.currency);
 
         let limits = vec![
-            self.claude_limits.provider_limits(now, self.claude_last_ts),
+            self.claude_limits.provider_limits(now, self.claude_last_ts, self.claude_fable_last_ts),
             self.codex.provider_limits(now),
         ];
         self.claude_level = mood::next_level(self.claude_level, limits[0].governing);
@@ -1073,6 +1147,8 @@ mod tests {
             },
             claude_dir_exists: true,
             claude_last_ts: None,
+            claude_fable_last_ts: None,
+            codex_account: Arc::new(Mutex::new(None)),
             health: Vec::new(),
             codex: CodexView::new(true),
             claude_limits: ClaudeLimitsView::default(),

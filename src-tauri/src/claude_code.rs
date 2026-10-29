@@ -438,6 +438,7 @@ mod tests {
         DataPaths {
             root: tmp.join("skylimit-data"),
             claude_projects: claude_config.join("projects"),
+            claude_global: tmp.join(".claude.json"),
             claude_config,
             t3_logs: tmp.join("t3"),
         }

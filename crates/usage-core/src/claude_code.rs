@@ -285,6 +285,7 @@ fn reading_of(s: Stored) -> Option<ClaudeReading> {
         at,
         five_hour: s.five_hour.map(convert),
         seven_day: s.seven_day.map(convert),
+        fable: None,
     };
     (r.five_hour.is_some() || r.seven_day.is_some()).then_some(r)
 }

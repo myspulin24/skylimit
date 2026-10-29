@@ -397,11 +397,13 @@ impl Store {
         Ok(())
     }
 
-    /// Rows of the newest snapshot of a provider (one per window).
+    /// Rows of the newest 5h and weekly snapshot of a provider (one per
+    /// window). Other windows (Claude's Fable) keep their own times.
     pub(crate) fn latest_limit_snapshot(&self, provider: &str) -> Vec<LimitRow> {
         let Ok(mut stmt) = self.conn.prepare(
             "SELECT win, percent, resets_at, ts FROM limit_snapshots
-             WHERE provider = ?1 AND ts = (SELECT MAX(ts) FROM limit_snapshots WHERE provider = ?1)",
+             WHERE provider = ?1 AND win IN ('5h', 'week') AND ts = (
+                 SELECT MAX(ts) FROM limit_snapshots WHERE provider = ?1 AND win IN ('5h', 'week'))",
         ) else {
             return Vec::new();
         };
@@ -417,6 +419,25 @@ impl Store {
             Ok(rows) => rows.flatten().collect(),
             Err(_) => Vec::new(),
         }
+    }
+
+    /// Newest row of one window of a provider.
+    pub(crate) fn latest_limit_row(&self, provider: &str, win: &str) -> Option<LimitRow> {
+        self.conn
+            .query_row(
+                "SELECT win, percent, resets_at, ts FROM limit_snapshots
+                 WHERE provider = ?1 AND win = ?2 ORDER BY ts DESC LIMIT 1",
+                params![provider, win],
+                |r| {
+                    Ok(LimitRow {
+                        win: r.get(0)?,
+                        percent: r.get(1)?,
+                        resets_at: r.get(2)?,
+                        ts: r.get(3)?,
+                    })
+                },
+            )
+            .ok()
     }
 
     pub(crate) fn prune_limit_snapshots(&self, before: i64) -> rusqlite::Result<usize> {
@@ -658,6 +679,21 @@ mod tests {
         assert!(latest.iter().all(|r| r.ts == 200));
         assert_eq!(store.prune_limit_snapshots(150).unwrap(), 1);
         assert_eq!(store.count("limit_snapshots"), 2);
+    }
+
+    #[test]
+    fn a_newer_fable_row_keeps_the_main_snapshot_and_has_its_own_latest() {
+        let store = Store::open_in_memory();
+        store.add_limit_snapshot(200, "claude", "5h", Some(20.0), Some(500)).unwrap();
+        store.add_limit_snapshot(200, "claude", "week", Some(5.0), Some(900)).unwrap();
+        store.add_limit_snapshot(250, "claude", "fable", Some(3.0), Some(900)).unwrap();
+        store.add_limit_snapshot(300, "claude", "fable", Some(4.0), Some(900)).unwrap();
+        let main = store.latest_limit_snapshot("claude");
+        assert_eq!(main.len(), 2);
+        assert!(main.iter().all(|r| r.ts == 200));
+        let fable = store.latest_limit_row("claude", "fable").unwrap();
+        assert_eq!((fable.ts, fable.percent), (300, Some(4.0)));
+        assert!(store.latest_limit_row("codex", "fable").is_none());
     }
 
     #[test]

@@ -5,6 +5,7 @@
 import { useEffect, useState } from "react";
 
 import { autostartStatus, setAutostart } from "./api";
+import { ToggleRow } from "./controls";
 import type { AutostartStatus } from "./types";
 
 export function AutostartCheck() {
@@ -42,18 +43,16 @@ export function AutostartCheck() {
 
   return (
     <>
-      <label className="check">
-        <input
-          type="checkbox"
-          checked={on}
-          disabled={status === null || busy || (status.problem !== "" && !on)}
-          onChange={(e) => void onChange(e.target.checked)}
-        />
-        Spouštět po přihlášení do počítače
-      </label>
-      <p className={status?.problem && !on ? "hint err-text" : "hint"}>{hint}</p>
+      <ToggleRow
+        title="Spouštět po přihlášení do počítače"
+        desc={hint}
+        descClass={status?.problem && !on ? "err-text" : undefined}
+        checked={on}
+        disabled={status === null || busy || (status.problem !== "" && !on)}
+        onChange={(next) => void onChange(next)}
+      />
       {error && (
-        <p className="hint err-text" role="alert">
+        <p className="row-note err-text" role="alert">
           {error}
         </p>
       )}

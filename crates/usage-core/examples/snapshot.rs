@@ -11,7 +11,7 @@
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
-use usage_core::{CodexSource, Config, Core};
+use usage_core::{claude_config, CodexSource, Config, Core};
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -29,6 +29,8 @@ fn main() {
 
     let mut config = Config::new(home.join(".claude").join("projects"), db.clone(), tmp.join("diag"));
     config.t3_logs_dir = Some(home.join(".t3").join("userdata").join("logs").join("provider"));
+    let config_dir = std::env::var_os("CLAUDE_CONFIG_DIR").map(PathBuf::from);
+    config.claude_config_file = Some(claude_config::path(config_dir.as_deref(), &home));
     if !args.iter().any(|a| a == "--codex") {
         config.codex = CodexSource::Disabled;
     }
@@ -50,5 +52,15 @@ fn main() {
     // Let Codex and the ČNB fetch land.
     std::thread::sleep(Duration::from_secs(3));
     println!("{}", serde_json::to_string_pretty(&handle.snapshot()).unwrap());
+    // Accounts without the e-mail, which has no business in a terminal log.
+    let claude = config_dir_account(&home);
+    eprintln!("claude account: plan {:?}, e-mail known {}", claude.as_ref().and_then(|a| a.organization_type.clone()), claude.is_some_and(|a| a.email.is_some()));
+    let codex = handle.codex_account();
+    eprintln!("codex account: {:?} {:?}, e-mail known {}", codex.as_ref().map(|a| a.kind.clone()), codex.as_ref().and_then(|a| a.plan.clone()), codex.is_some_and(|a| a.email.is_some()));
     handle.shutdown();
+}
+
+fn config_dir_account(home: &std::path::Path) -> Option<usage_core::ClaudeAccount> {
+    let config_dir = std::env::var_os("CLAUDE_CONFIG_DIR").map(PathBuf::from);
+    claude_config::account(&claude_config::path(config_dir.as_deref(), home))
 }

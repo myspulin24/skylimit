@@ -13,7 +13,7 @@ import {
   type FixtureName,
 } from "./fixtures";
 import { PROVIDER_NAME } from "./format";
-import type { AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
+import type { Accounts, AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
 
 const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -256,4 +256,43 @@ export async function setAutostart(on: boolean): Promise<AutostartStatus> {
   await new Promise((r) => setTimeout(r, 150));
   autostart = { ...autostart, state: on ? "on" : "off" };
   return autostart;
+}
+
+// Settings › Účty in the browser: `?accounts=none` shows both signed out.
+export async function getAccounts(): Promise<Accounts> {
+  await new Promise((r) => setTimeout(r, 120));
+  if (new URLSearchParams(location.search).get("accounts") === "none") {
+    return { claude: null, codex: null, codexNote: "Codex CLI nenalezen" };
+  }
+  const now = nowSec();
+  return {
+    claude: {
+      email: "jana.novakova@example.com",
+      name: "Jana Nováková",
+      organization: "Nováková Studio",
+      organizationType: "claude_team",
+      role: "membership_admin",
+      seatTier: "team_tier_1",
+      rateLimitTier: "default_claude_max_5x",
+      billing: "stripe_subscription",
+      accountCreatedAt: now - 213 * 86_400,
+      subscriptionCreatedAt: now - 215 * 86_400,
+      extraUsage: true,
+      extraUsageBlocked: "out_of_credits",
+      profileFetchedAt: now - 3 * 3600,
+      limitsFetchedAt: now - 4 * 60,
+    },
+    codex: {
+      kind: "chatgpt",
+      email: "jana.novakova@example.com",
+      plan: "team",
+      workspace: "Nováková Studio",
+      cliVersion: "0.166.0",
+      resetCredits: 1,
+      credits: { hasCredits: false, unlimited: false, balance: null },
+      lifetimeTokens: 1_284_000_000,
+      readAt: now - 90,
+    },
+    codexNote: null,
+  };
 }

@@ -55,6 +55,7 @@ pub fn run() {
             commands::open_app,
             commands::open_feedback,
             commands::clear_history,
+            commands::accounts,
             claude_code::claude_code_status,
             claude_code::claude_code_connect,
             claude_code::claude_code_disconnect,
@@ -96,6 +97,7 @@ fn setup(app: &AppHandle) -> tauri::Result<()> {
     config.codex = CodexSource::official();
     config.t3_logs_dir = Some(paths.t3_logs.clone());
     config.claude_code_dir = Some(paths.claude_code());
+    config.claude_config_file = Some(paths.claude_global.clone());
     config.settings = settings.clone();
     config.fx = FxSource::Cnb;
     config.pricing_refresh = false;

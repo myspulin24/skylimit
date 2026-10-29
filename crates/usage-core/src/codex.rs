@@ -8,8 +8,13 @@
 //!        │ backoff 5 s … 15 min              ├─ account/rateLimits/read  every 2 min
 //!        │                                   │    (≥ 60 s apart, error backoff ≤ 15 min,
 //!     EOF / timeout ◀────────────────────────┤     now on account/rateLimits/updated)
-//!                                            └─ account/usage/read       every 5 min
+//!                                            ├─ account/usage/read       every 5 min
+//!                                            └─ account/read             after start, on
+//!                                                 account/updated and on "Obnovit"
 //! ```
+//!
+//! `account/read` says who is signed in (e-mail, plan, workspace) for
+//! Settings › Účty; the CLI version comes from `initialize`'s user agent.
 //!
 //! Limits map by POSITION (decision D7): `primary` → 5h, `secondary` → week.
 //! A window is Known while the last successful read is ≤ 10 min old, Stale
@@ -34,7 +39,9 @@ use std::time::{Duration, Instant};
 use serde_json::{json, Value};
 
 use crate::diag::{json_shape, Diag};
-use crate::model::{LimitWindow, LimitsState, Provider, ProviderLimits, WindowKind, WindowState};
+use crate::model::{
+    CodexAccount, CodexCredits, LimitWindow, LimitsState, Provider, ProviderLimits, WindowKind, WindowState,
+};
 use crate::mood::Activity;
 use crate::user_path;
 use crate::{Clock, CoreMsg, Update};
@@ -71,6 +78,26 @@ pub(crate) struct LimitsReading {
     pub secondary: Option<RateWindow>,
     /// Extra limit ids (`rateLimitsByLimitId` other than `codex`): label, kind, window.
     pub extra: Vec<(String, WindowKind, RateWindow)>,
+    pub account: LimitsAccount,
+}
+
+/// What a limits read says about the account (Settings › Účty).
+#[derive(Debug, Clone, Default, PartialEq)]
+pub(crate) struct LimitsAccount {
+    pub plan: Option<String>,
+    pub reset_credits: Option<u32>,
+    pub credits: Option<CodexCredits>,
+}
+
+/// `result` of `account/read` plus the CLI version from `initialize`.
+#[derive(Debug, Clone, PartialEq)]
+pub(crate) struct AccountRead {
+    pub kind: String,
+    pub email: Option<String>,
+    pub plan: Option<String>,
+    pub workspace: Option<String>,
+    pub cli_version: Option<String>,
+    pub at: i64,
 }
 
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -100,6 +127,7 @@ pub(crate) enum CodexEvent {
     LimitsFailed,
     Usage(UsageReading),
     UsageFailed,
+    Account(AccountRead),
     Activity { at: i64, until: i64 },
 }
 
@@ -151,12 +179,59 @@ pub(crate) fn parse_rate_limits(result: &Value, at: i64) -> Option<LimitsReading
             }
         }
     }
+    let credits = rl.get("credits").filter(|c| c.is_object()).map(|c| CodexCredits {
+        has_credits: c.get("hasCredits").and_then(Value::as_bool).unwrap_or(false),
+        unlimited: c.get("unlimited").and_then(Value::as_bool).unwrap_or(false),
+        balance: c.get("balance").and_then(|b| match b {
+            Value::String(t) => Some(t.trim().to_string()).filter(|t| !t.is_empty()),
+            Value::Number(n) => Some(n.to_string()),
+            _ => None,
+        }),
+    });
     Some(LimitsReading {
         at,
         primary: rl.get("primary").and_then(window),
         secondary: rl.get("secondary").and_then(window),
         extra,
+        account: LimitsAccount {
+            plan: result.get("rateLimits").and_then(|v| text(v, "planType")),
+            reset_credits: result
+                .pointer("/rateLimitResetCredits/availableCount")
+                .and_then(Value::as_u64)
+                .map(|n| n.min(u64::from(u32::MAX)) as u32),
+            credits,
+        },
     })
+}
+
+fn text(v: &Value, key: &str) -> Option<String> {
+    v.get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|t| !t.is_empty())
+        .map(str::to_string)
+}
+
+/// `result` of `account/read`. `None` = unknown shape; `kind` "none" =
+/// signed out.
+pub(crate) fn parse_account(result: &Value, cli_version: Option<String>, at: i64) -> Option<AccountRead> {
+    let account = result.as_object()?.get("account")?;
+    let field = |key: &str| account.is_object().then(|| text(account, key)).flatten();
+    Some(AccountRead {
+        kind: field("type").unwrap_or_else(|| "none".into()),
+        email: field("email"),
+        plan: field("planType"),
+        workspace: field("workspaceName"),
+        cli_version,
+        at,
+    })
+}
+
+/// "skylimit/0.166.0 (Windows 10.0.26300; x86_64) …" → "0.166.0": the server
+/// puts its own version after the client's name.
+pub(crate) fn cli_version(user_agent: &str) -> Option<String> {
+    let version = user_agent.split_once('/')?.1.split_whitespace().next()?;
+    (version.starts_with(|c: char| c.is_ascii_digit()) && version.len() <= 32).then(|| version.to_string())
 }
 
 /// `result` of `account/usage/read` (null params). `None` = unknown shape.
@@ -213,6 +288,7 @@ pub(crate) struct CodexView {
     pub active_until: Option<i64>,
     pub last_rise_at: Option<i64>,
     pub running_since: Option<i64>,
+    pub account: Option<AccountRead>,
 }
 
 impl CodexView {
@@ -227,7 +303,25 @@ impl CodexView {
             active_until: None,
             last_rise_at: None,
             running_since: None,
+            account: None,
         }
+    }
+
+    /// Who is signed in, with what the limits and usage reads add.
+    pub(crate) fn account(&self) -> Option<CodexAccount> {
+        let a = self.account.as_ref()?;
+        let extra = self.limits.as_ref().map(|l| &l.account);
+        Some(CodexAccount {
+            kind: a.kind.clone(),
+            email: a.email.clone(),
+            plan: a.plan.clone().or_else(|| extra.and_then(|e| e.plan.clone())),
+            workspace: a.workspace.clone(),
+            cli_version: a.cli_version.clone(),
+            reset_credits: extra.and_then(|e| e.reset_credits),
+            credits: extra.and_then(|e| e.credits.clone()),
+            lifetime_tokens: self.summary.as_ref().and_then(|s| s.lifetime_tokens),
+            read_at: a.at,
+        })
     }
 
     pub(crate) fn apply(&mut self, ev: &CodexEvent) {
@@ -254,6 +348,7 @@ impl CodexView {
                 self.summary = Some(u.summary.clone());
             }
             CodexEvent::UsageFailed => {}
+            CodexEvent::Account(a) => self.account = Some(a.clone()),
             CodexEvent::Activity { at, until } => {
                 self.last_rise_at = Some(*at);
                 self.active_until = Some(self.active_until.map_or(*until, |u| u.max(*until)));
@@ -374,6 +469,7 @@ enum Req {
     Initialize,
     Limits,
     Usage,
+    Account,
 }
 
 struct Proc {
@@ -507,6 +603,10 @@ struct Sched {
     usage_errors: u32,
     prev_primary: Option<f64>,
     prev_buckets: Option<HashMap<String, u64>>,
+    /// `account/read` is due (after start, `account/updated`, "Obnovit").
+    account_due: bool,
+    /// From `initialize`, for the account.
+    cli_version: Option<String>,
 }
 
 fn backoff(base: i64, errors: u32) -> i64 {
@@ -540,6 +640,8 @@ impl CodexThread {
             usage_errors: 0,
             prev_primary: None,
             prev_buckets: None,
+            account_due: true,
+            cli_version: None,
         };
         let mut proc: Option<Proc> = None;
         // Resolved once, right before the first start (it may take a moment).
@@ -556,6 +658,7 @@ impl CodexThread {
                     let now = (self.clock)();
                     s.next_limits_at = s.last_limits_sent.map_or(now, |t| now.max(t + MANUAL_GAP));
                     s.next_usage_at = s.last_usage_sent.map_or(now, |t| now.max(t + MANUAL_GAP));
+                    s.account_due = true;
                     if proc.is_none() {
                         s.next_spawn_at = now;
                         s.spawn_backoff = SPAWN_BACKOFF_START;
@@ -644,6 +747,16 @@ impl CodexThread {
                         dead = Some("stdin closed");
                     }
                 }
+                if s.account_due && !p.pending.values().any(|(r, _)| *r == Req::Account) {
+                    let id = s.next_id;
+                    s.next_id += 1;
+                    if p.send(&json!({"jsonrpc": "2.0", "id": id, "method": "account/read", "params": {}})) {
+                        p.pending.insert(id, (Req::Account, Instant::now()));
+                        s.account_due = false;
+                    } else {
+                        dead = Some("stdin closed");
+                    }
+                }
                 if now >= s.next_usage_at && !p.pending.values().any(|(r, _)| *r == Req::Usage) {
                     let id = s.next_id;
                     s.next_id += 1;
@@ -682,6 +795,7 @@ impl CodexThread {
                 s.spawn_backoff = (s.spawn_backoff * 2).min(MAX_BACKOFF);
                 s.prev_primary = None;
                 s.prev_buckets = None;
+                s.account_due = true;
             }
         }
         if let Some(p) = proc.take() {
@@ -703,7 +817,10 @@ impl CodexThread {
                 if method == "account/rateLimits/updated" {
                     s.next_limits_at = s.last_limits_sent.map_or(now, |t| now.max(t + MIN_GAP));
                 }
-                // Anything else (remoteControl/status/changed, account/updated, …) is ignored.
+                if method == "account/updated" {
+                    s.account_due = true;
+                }
+                // Anything else (remoteControl/status/changed, …) is ignored.
                 true
             }
             (Some(id), None) => {
@@ -727,6 +844,7 @@ impl CodexThread {
                 }
                 p.send(&json!({"jsonrpc": "2.0", "method": "initialized"}));
                 p.initialized = true;
+                s.cli_version = result.and_then(|r| r.get("userAgent")).and_then(Value::as_str).and_then(cli_version);
                 s.ever_initialized = true;
                 s.next_limits_at = s.last_limits_sent.map_or(now, |t| now.max(t + MIN_GAP));
                 s.next_usage_at = s.last_usage_sent.map_or(now, |t| now.max(t + MIN_GAP));
@@ -757,6 +875,19 @@ impl CodexThread {
                         s.next_limits_at = now + backoff(LIMITS_EVERY, s.limits_errors);
                         s.limits_errors += 1;
                         self.emit(CodexEvent::LimitsFailed);
+                    }
+                }
+                true
+            }
+            Req::Account => {
+                match result.and_then(|r| parse_account(r, s.cli_version.clone(), now)) {
+                    Some(account) => {
+                        self.emit(CodexEvent::Account(account));
+                    }
+                    None => {
+                        if let Some(r) = result {
+                            self.diag.log(now, "codex", &format!("unknown account shape: {}", json_shape(r)));
+                        }
                     }
                 }
                 true
@@ -918,6 +1049,52 @@ mod tests {
         assert_eq!(p.resets_at, Some(1_793_202_776));
         assert_eq!(p.used_percent, 0.0);
         assert!(r.extra.is_empty(), "the `codex` entry duplicates rateLimits");
+        assert_eq!(r.account.plan.as_deref(), Some("team"));
+        assert_eq!(r.account.reset_credits, Some(2));
+        assert_eq!(
+            r.account.credits,
+            Some(CodexCredits {
+                has_credits: false,
+                unlimited: false,
+                balance: None
+            })
+        );
+    }
+
+    #[test]
+    fn account_read_and_cli_version() {
+        // Shape of codex-cli 0.166.0's answer.
+        let signed_in = json!({
+            "account": {"type": "chatgpt", "email": "jana@example.com", "planType": "team", "workspaceName": "Firma"},
+            "requiresOpenaiAuth": true,
+            "workspaceRouting": {"chatgptAccountId": "x", "backendOrigin": "https://chatgpt.com", "accountRoutingOverride": "NO_CONSTRAINT"}
+        });
+        let a = parse_account(&signed_in, Some("0.166.0".into()), 7).unwrap();
+        assert_eq!(a.kind, "chatgpt");
+        assert_eq!(a.email.as_deref(), Some("jana@example.com"));
+        assert_eq!(a.plan.as_deref(), Some("team"));
+        assert_eq!(a.workspace.as_deref(), Some("Firma"));
+        assert_eq!(a.cli_version.as_deref(), Some("0.166.0"));
+
+        let api_key = parse_account(&json!({"account": {"type": "apiKey"}, "requiresOpenaiAuth": true}), None, 7).unwrap();
+        assert_eq!((api_key.kind.as_str(), api_key.email), ("apiKey", None));
+        let out = parse_account(&json!({"account": null, "requiresOpenaiAuth": true}), None, 7).unwrap();
+        assert_eq!(out.kind, "none");
+        assert!(parse_account(&json!({"requiresOpenaiAuth": true}), None, 7).is_none());
+
+        assert_eq!(
+            cli_version("skylimit/0.166.0 (Windows 10.0.26300; x86_64) xterm-256color (skylimit; 0.10.0)").as_deref(),
+            Some("0.166.0")
+        );
+        assert_eq!(cli_version("codex_cli_rs"), None);
+        assert_eq!(cli_version("x/beta (y)"), None);
+
+        let mut view = CodexView::new(false);
+        assert_eq!(view.account(), None);
+        view.apply(&CodexEvent::Account(a));
+        view.apply(&CodexEvent::Limits(parse_rate_limits(&fixture("rate-limits.json")["result"], 8).unwrap()));
+        let shown = view.account().unwrap();
+        assert_eq!((shown.reset_credits, shown.read_at), (Some(2), 7));
     }
 
     #[test]
@@ -948,6 +1125,7 @@ mod tests {
 
     fn reading(at: i64, p5h: f64, reset5h: i64, pweek: f64, reset_week: i64) -> LimitsReading {
         LimitsReading {
+            account: LimitsAccount::default(),
             at,
             primary: Some(RateWindow {
                 used_percent: p5h,

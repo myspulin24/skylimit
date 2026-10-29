@@ -25,6 +25,7 @@ vi.mock("./api", () => ({
   disconnectClaudeCode: vi.fn(),
   autostartStatus: vi.fn(() => Promise.resolve({ state: "off", problem: "" })),
   setAutostart: vi.fn((on: boolean) => Promise.resolve({ state: on ? "on" : "off", problem: "" })),
+  getAccounts: vi.fn(() => Promise.resolve({ claude: null, codex: null, codexNote: null })),
 }));
 
 import * as api from "./api";

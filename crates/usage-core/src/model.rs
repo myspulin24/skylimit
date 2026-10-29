@@ -271,6 +271,69 @@ impl Snapshot {
     }
 }
 
+/// The Claude account Claude Code is signed in with (Settings › Účty), from
+/// `oauthAccount` in Claude Code's global config (`claude_config.rs`). Enum
+/// values stay raw (`claude_team`, `default_claude_max_5x`, …); the UI
+/// labels them. Not part of the snapshot: it never reaches the widget.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ClaudeAccount {
+    pub email: Option<String>,
+    pub name: Option<String>,
+    pub organization: Option<String>,
+    pub organization_type: Option<String>,
+    pub role: Option<String>,
+    pub seat_tier: Option<String>,
+    pub rate_limit_tier: Option<String>,
+    pub billing: Option<String>,
+    pub account_created_at: Option<i64>,
+    pub subscription_created_at: Option<i64>,
+    /// Extra usage (paid past the plan's limits) switched on for the account.
+    pub extra_usage: Option<bool>,
+    /// Why extra usage cannot be used right now (`out_of_credits`, …).
+    pub extra_usage_blocked: Option<String>,
+    /// When Claude Code last refreshed the profile and the limits.
+    pub profile_fetched_at: Option<i64>,
+    pub limits_fetched_at: Option<i64>,
+}
+
+/// Prepaid Codex credits (`credits` of `account/rateLimits/read`).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexCredits {
+    pub has_credits: bool,
+    pub unlimited: bool,
+    pub balance: Option<String>,
+}
+
+/// The account the Codex CLI is signed in with, from the app-server
+/// (`account/read`, plus what the limits and usage reads add).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexAccount {
+    /// `chatgpt`, `apiKey`, `amazonBedrock`, `gcp`, or `none` when signed out.
+    pub kind: String,
+    pub email: Option<String>,
+    pub plan: Option<String>,
+    pub workspace: Option<String>,
+    pub cli_version: Option<String>,
+    /// Limit resets the account can still use (`rateLimitResetCredits`).
+    pub reset_credits: Option<u32>,
+    pub credits: Option<CodexCredits>,
+    pub lifetime_tokens: Option<u64>,
+    pub read_at: i64,
+}
+
+/// Settings › Účty: who Skylimit reads for each provider.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Accounts {
+    pub claude: Option<ClaudeAccount>,
+    pub codex: Option<CodexAccount>,
+    /// Why there is no Codex account (CLI missing, app-server down, …).
+    pub codex_note: Option<String>,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PlanCurrency {
     #[serde(rename = "EUR")]

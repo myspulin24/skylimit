@@ -67,6 +67,7 @@ impl Env {
             claude_projects_dir: self.projects.clone(),
             t3_logs_dir: None,
             claude_code_dir: None,
+            claude_config_file: None,
             db_path: self.tmp.path().join("skylimit-data").join("history.sqlite"),
             diag_dir: self.tmp.path().join("diag"),
             codex,
@@ -625,6 +626,105 @@ fn claude_limits_come_from_the_claude_code_status_line_and_the_newest_source_win
     assert_eq!(claude.state, LimitsState::Known);
     assert_eq!(claude.windows[0].fetched_at, Some(env.now()), "newer than T3 Code's reading");
     assert_eq!(claude.windows[1].percent, Some(21.0));
+    h.shutdown();
+}
+
+/// Claude Code's `.claude.json` with its usage cache (trimmed to what matters).
+fn claude_config(fetched_at: i64, five: f64, week: f64, fable: f64) -> String {
+    let iso = |t: i64| chrono_free_iso(t);
+    serde_json::json!({
+        "projects": { "C:/work": { "history": [] } },
+        "oauthAccount": { "accountUuid": "acc-1", "emailAddress": "jana@example.com", "organizationType": "claude_max" },
+        "cachedUsageUtilization": {
+            "fetchedAtMs": fetched_at * 1000,
+            "accountUuid": "acc-1",
+            "utilization": {
+                "five_hour": { "utilization": five, "resets_at": iso(RESET_5H) },
+                "seven_day": { "utilization": week, "resets_at": iso(RESET_WEEK) },
+                "limits": [
+                    { "kind": "weekly_scoped", "group": "weekly", "percent": fable, "resets_at": iso(RESET_WEEK),
+                      "scope": { "model": { "display_name": "Fable" } } }
+                ]
+            }
+        }
+    })
+    .to_string()
+}
+
+/// RFC 3339 in UTC without pulling chrono into the test.
+fn chrono_free_iso(t: i64) -> String {
+    let days = t.div_euclid(86_400);
+    let secs = t.rem_euclid(86_400);
+    // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
+    let z = days + 719_468;
+    let era = z.div_euclid(146_097);
+    let doe = z.rem_euclid(146_097);
+    let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = doy - (153 * mp + 2) / 5 + 1;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 };
+    let y = yoe + era * 400 + i64::from(m <= 2);
+    format!("{y:04}-{m:02}-{d:02}T{:02}:{:02}:{:02}+00:00", secs / 3600, secs / 60 % 60, secs % 60)
+}
+
+#[test]
+fn the_fable_limit_comes_from_claude_codes_cache_below_the_week_and_survives_a_restart() {
+    let env = Env::new();
+    let file = env.tmp.path().join("home").join(claude_config::FILE_NAME);
+    fs::write(&file, claude_config(T0 - 120, 30.0, 40.0, 12.5)).unwrap();
+    let mut config = env.config(CodexSource::Disabled);
+    config.claude_config_file = Some(file.clone());
+    let h = Core::start(config.clone());
+    let s = wait_for(&h, &env, "claude limits from the cache", |s| {
+        s.limits_for(Provider::Claude).is_some_and(|l| l.windows.len() == 3)
+    });
+    let claude = s.limits_for(Provider::Claude).unwrap();
+    assert_eq!(claude.state, LimitsState::Known);
+    assert_eq!(claude.governing, Some(40.0), "Fable never governs");
+    let fable = &claude.windows[2];
+    assert_eq!(fable.kind, WindowKind::WeekModel);
+    assert_eq!(fable.label, "Fable");
+    assert_eq!(fable.percent, Some(12.5));
+    assert_eq!(fable.resets_at, Some(RESET_WEEK));
+    assert_eq!(fable.fetched_at, Some(T0 - 120));
+
+    // Claude Code refreshes its cache: Skylimit notices the changed file.
+    fs::write(&file, claude_config(T0 - 60, 31.0, 41.0, 20.0)).unwrap();
+    h.refresh();
+    wait_for(&h, &env, "fable at 20 %", |s| {
+        s.limits_for(Provider::Claude).is_some_and(|l| l.windows.get(2).and_then(|w| w.percent) == Some(20.0))
+    });
+    h.shutdown();
+
+    // Claude Code signed out (cache gone): the database keeps the last values.
+    fs::write(&file, "{}").unwrap();
+    let h = Core::start(config);
+    let s = wait_for(&h, &env, "restored fable", |s| {
+        s.limits_for(Provider::Claude).is_some_and(|l| l.windows.len() == 3)
+    });
+    let claude = s.limits_for(Provider::Claude).unwrap();
+    assert_eq!(claude.windows[1].percent, Some(41.0));
+    assert_eq!((claude.windows[2].percent, claude.windows[2].fetched_at), (Some(20.0), Some(T0 - 60)));
+    assert_eq!(claude_config::account(&file), None);
+    h.shutdown();
+}
+
+#[test]
+fn the_codex_account_comes_from_the_app_server() {
+    let env = Env::new();
+    let h = Core::start(env.config(env.fake_codex()));
+    wait_until(&env, "codex account", || h.codex_account().is_some_and(|a| a.reset_credits.is_some()));
+    let a = h.codex_account().unwrap();
+    assert_eq!(a.kind, "chatgpt");
+    assert_eq!(a.email.as_deref(), Some("tester@example.com"));
+    assert_eq!(a.plan.as_deref(), Some("team"));
+    assert_eq!(a.workspace.as_deref(), Some("Test"));
+    assert_eq!(a.cli_version.as_deref(), Some("0.0.0"));
+    assert_eq!(a.reset_credits, Some(2));
+    assert!(count_requests(&env, "account/read") >= 1);
+    // The e-mail stays out of the snapshot the widget gets.
+    assert!(!serde_json::to_string(&h.snapshot()).unwrap().contains("tester@example.com"));
     h.shutdown();
 }
 

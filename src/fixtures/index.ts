@@ -90,6 +90,7 @@ function normal(now: number): Snapshot {
         windows: [
           { kind: "5h", label: "5h", percent: 18, resetsAt: now + 3 * HOUR + 20 * MIN, fetchedAt: now - 4 * MIN, state: "known" },
           { kind: "week", label: "týden", percent: 34, resetsAt: now + 5 * DAY + 2 * HOUR, fetchedAt: now - 4 * MIN, state: "known" },
+          { kind: "weekModel", label: "Fable", percent: 9, resetsAt: now + 5 * DAY + 2 * HOUR, fetchedAt: now - 6 * MIN, state: "known" },
         ],
         note: null,
       },
@@ -169,6 +170,7 @@ function stale(now: number): Snapshot {
     windows: [
       { kind: "5h", label: "5h", percent: 22, resetsAt: now + 2 * HOUR, fetchedAt: now - 52 * MIN, state: "stale" },
       { kind: "week", label: "týden", percent: 34, resetsAt: now + 5 * DAY, fetchedAt: now - 52 * MIN, state: "stale" },
+      { kind: "weekModel", label: "Fable", percent: 9, resetsAt: now + 5 * DAY, fetchedAt: now - 52 * MIN, state: "known" },
     ],
     note: "Claude od té doby běžel mimo terminál i T3 Code",
   };

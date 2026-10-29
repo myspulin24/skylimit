@@ -1,7 +1,7 @@
 {
   "name": "skylimit",
   "productName": "Skylimit",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "private": true,
   "type": "module",
   "description": "Skylimit: widget na plochu, který hlídá limity Claude a Codexu a počítá práci v cenách API (Tauri 2, React, Rust)",

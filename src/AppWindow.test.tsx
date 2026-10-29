@@ -25,6 +25,7 @@ vi.mock("./api", () => ({
   disconnectClaudeCode: vi.fn(),
   autostartStatus: vi.fn(() => Promise.resolve({ state: "off", problem: "" })),
   setAutostart: vi.fn((on: boolean) => Promise.resolve({ state: on ? "on" : "off", problem: "" })),
+  getAccounts: vi.fn(() => Promise.resolve({ claude: null, codex: null, codexNote: null })),
 }));
 
 import * as api from "./api";
@@ -159,7 +160,8 @@ describe("AppWindow · Nastavení", () => {
     await user.type(amount, "250,5");
     await user.selectOptions(screen.getByLabelText("Měna paušálu Claude"), "EUR");
     await user.selectOptions(screen.getByLabelText("Období paušálu Claude"), "year");
-    await user.click(screen.getByLabelText("Paušál Codex nezadáno"));
+    // An empty amount is no plan.
+    await user.clear(screen.getByLabelText("Částka paušálu Codex"));
     await user.click(screen.getByLabelText("Započítat odhad Codexu do skóre"));
     await user.click(screen.getByLabelText(/Terminál/));
     await user.click(screen.getByRole("button", { name: "Uložit" }));
@@ -187,7 +189,7 @@ describe("AppWindow · Nastavení", () => {
     await user.type(amount, "abc");
     await user.click(screen.getByRole("button", { name: "Uložit" }));
     expect(api.setSettings).not.toHaveBeenCalled();
-    expect(screen.getByText(/Paušál Codex: zadej kladnou částku/)).toBeInTheDocument();
+    expect(screen.getByText(/Paušál Codex: zadej kladnou částku, nebo pole nech prázdné/)).toBeInTheDocument();
   });
 
   it("transparency slider applies immediately and shows the value", async () => {
@@ -201,7 +203,7 @@ describe("AppWindow · Nastavení", () => {
 
   it("click-through toggle applies immediately", async () => {
     const user = await openSettings();
-    await user.click(screen.getByLabelText("Průchod kliknutí (widget nereaguje na myš)"));
+    await user.click(screen.getByRole("switch", { name: "Průchod kliknutí" }));
     expect(api.setClickThrough).toHaveBeenCalledWith(true);
   });
 

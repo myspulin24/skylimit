@@ -58,6 +58,38 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.10.0] — 2026-10-29
+
+### Přidáno
+
+- **Týdenní limit Fable.** Pokud má tvůj účet na Fable vlastní týdenní
+  limit, ukáže ho widget menším řádkem **Fable** hned pod týdnem Claude.
+  Zastaralý se ukáže jen po práci s Fable, ne s jinými modely, a na náladu
+  postaviček ani barvu ikony nemá vliv.
+- **Nastavení › Účty.** S jakým účtem Claude a Codexu je Skylimit spojený:
+  e-mail, tarif, organizace nebo workspace, role, předplatné, extra využití,
+  zbývající resety limitu, kredity a verze Codex CLI.
+- Limity Claude i bez připojeného stavového řádku a bez T3 Code: Skylimit
+  čte limity, které si Claude Code sám načítá a ukládá do `~/.claude.json`
+  (zhruba každých 10 minut, dokud běží).
+
+### Změněno
+
+- **Nový vzhled nastavení.** Jeden sloupec přehledných skupin, všechna pole,
+  rozbalovací seznamy a tlačítka mají na Windows, macOS i Linuxu stejnou
+  výšku, místo zaškrtávátek jsou přepínače. Lišta **Uložit** se ukáže až
+  s neuloženou změnou.
+- Paušál už nemá zaškrtávátko „nezadáno“: prázdné pole znamená bez paušálu.
+- „Nepočítat do skóre“ je teď **Co se počítá do skóre** s přepínačem
+  u každého zdroje.
+
+### Zabezpečení
+
+- Z `~/.claude.json` se čtou jen klíče `oauthAccount` (účet) a
+  `cachedUsageUtilization` (procenta limitů), zbytek souboru se přeskočí.
+  Účty se ukazují jen v **Nastavení › Účty**, do widgetu ani do zpětné vazby
+  se nedostanou.
+
 ## [0.9.0] — 2026-10-29
 
 ### Přidáno
@@ -295,7 +327,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.9.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/myspulin24/skylimit/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/myspulin24/skylimit/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/myspulin24/skylimit/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/myspulin24/skylimit/compare/v0.6.0...v0.7.0

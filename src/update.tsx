@@ -140,7 +140,7 @@ function ago(epoch: number): string {
   return hours < 24 ? `před ${hours} h` : `před ${Math.round(hours / 24)} d`;
 }
 
-/** "O aplikaci": state of updates and a manual check. */
+/** Settings › O aplikaci: state of updates and a manual check, as one row. */
 export function UpdateLine({ status }: { status: UpdateStatus | null }) {
   const [checking, setChecking] = useState(false);
   const check = () => {
@@ -156,13 +156,24 @@ export function UpdateLine({ status }: { status: UpdateStatus | null }) {
   else text = status.auto ? "Nová verze se hledá automaticky po spuštění a každých 6 hodin." : "Automatická kontrola je vypnutá.";
 
   return (
-    <div className="update-line">
-      <p className={status?.phase === "error" && !hasOffer(status) ? "hint err-text" : "hint"} role="status">
-        {text}
-      </p>
-      <button type="button" className="btn small" onClick={check} disabled={checking || status?.phase === "checking"}>
-        Zkontrolovat aktualizace
-      </button>
+    <div className="row">
+      <div className="row-text">
+        <div className="row-title">Aktualizace</div>
+        <p className={status?.phase === "error" && !hasOffer(status) ? "row-desc err-text" : "row-desc"} role="status">
+          {text}
+        </p>
+      </div>
+      <div className="row-control">
+        <button
+          type="button"
+          className="btn"
+          aria-label="Zkontrolovat aktualizace"
+          onClick={check}
+          disabled={checking || status?.phase === "checking"}
+        >
+          Zkontrolovat
+        </button>
+      </div>
     </div>
   );
 }

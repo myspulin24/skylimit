@@ -470,35 +470,11 @@ html[data-window="app"] body {
   font-size: 12px;
 }
 
-/* ---------- settings ---------- */
+/* ---------- controls (settings, feedback dialog) ---------- */
 
-/* Two columns from 980 px: plan and score left, display, widget and history right. */
-.settings {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
-  gap: 14px;
-  align-items: start;
-}
-
-.settings-col {
-  display: grid;
-  gap: 14px;
-  min-width: 0;
-}
-
-.settings-actions {
-  grid-column: 1 / -1;
-}
-
-@media (max-width: 980px) {
-  .settings {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-.settings-card h2 {
-  margin-bottom: 8px;
-}
+/* Every control is drawn by us at one height (--control-h): native chrome
+   differs per platform (macOS rounds selects and buttons its own way and
+   makes them taller), so appearance is reset on each control explicitly. */
 
 .hint {
   margin: 0 0 8px;
@@ -507,6 +483,7 @@ html[data-window="app"] body {
 }
 
 .field {
+  min-width: 0;
   margin: 10px 0 0;
   padding: 0;
   border: 0;
@@ -520,132 +497,104 @@ html[data-window="app"] body {
   color: var(--ink-2);
 }
 
-.segmented {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--surface-0);
-}
-
-.segmented label {
-  position: relative;
-  padding: 5px 14px;
-  border-radius: 7px;
-  font-size: 12.5px;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-
-.segmented label.is-on {
-  background: var(--surface-2);
-  color: var(--ink-1);
-}
-
-.segmented label:focus-within {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 1px;
-}
-
-.segmented input {
-  position: absolute;
-  inset: 0;
-  margin: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.plan-row {
-  display: grid;
-  grid-template-columns: 76px minmax(80px, 150px) 80px minmax(96px, 118px) auto;
-  gap: 8px;
-  justify-content: start;
-  align-items: center;
-  padding: 6px 0;
-}
-
-.plan-name {
-  display: inline-flex;
-  gap: 8px;
-  align-items: center;
-  font-weight: 500;
-}
-
-.input {
+.input,
+.select select {
   min-width: 0;
-  padding: 6px 10px;
+  height: var(--control-h);
+  margin: 0;
+  padding: 0 10px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   background: var(--surface-0);
+  box-shadow: none;
+  font-size: 13px;
+  line-height: normal;
   color: var(--ink-1);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.input.amount {
-  font-variant-numeric: tabular-nums;
+.input::placeholder {
+  color: var(--ink-4);
 }
 
-.input:disabled {
+.input:hover,
+.select select:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.input:focus,
+.select select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-ring);
+}
+
+.input:disabled,
+.select select:disabled {
   opacity: 0.4;
 }
 
-.check {
-  display: flex;
-  gap: 9px;
-  align-items: center;
-  padding: 4px 0;
-  font-size: 13px;
+.select {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+}
+
+.select select {
+  width: 100%;
+  padding-right: 28px;
   cursor: pointer;
 }
 
-.check.compact {
-  font-size: 12px;
-  color: var(--ink-2);
+.select svg {
+  position: absolute;
+  top: 50%;
+  right: 9px;
+  margin-top: -6px;
+  color: var(--ink-3);
+  pointer-events: none;
 }
 
-.check input {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  accent-color: #6b9ff0;
+/* Amount and its currency read as one field. */
+.input-group {
+  display: inline-flex;
 }
 
-.range-field {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 6px 12px;
-  align-items: baseline;
-  margin: 2px 0 6px;
-  font-size: 13px;
+.input-group .input {
+  border-radius: 8px 0 0 8px;
 }
 
-.range-value {
-  font-weight: 600;
-  color: var(--ink-1);
+.input-group .select select {
+  margin-left: -1px;
+  border-radius: 0 8px 8px 0;
 }
 
-.range {
-  grid-column: 1 / -1;
-  width: 100%;
-  margin: 0;
-  accent-color: #6b9ff0;
-}
-
-.check-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 0 16px;
+.input-group .input:focus,
+.input-group .select select:focus {
+  position: relative;
+  z-index: 1;
 }
 
 .btn {
-  padding: 7px 14px;
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-content: center;
+  height: var(--control-h);
+  padding: 0 14px;
   border: 1px solid var(--line-strong);
   border-radius: 8px;
   background: var(--fill-soft);
   font-size: 12.5px;
   font-weight: 500;
+  line-height: 1;
+  white-space: nowrap;
   color: var(--ink-1);
-  transition: background-color 0.15s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
 .btn:hover {
@@ -658,7 +607,8 @@ html[data-window="app"] body {
 }
 
 .btn.small {
-  padding: 4px 10px;
+  height: 26px;
+  padding: 0 10px;
   font-size: 12px;
 }
 
@@ -681,16 +631,160 @@ html[data-window="app"] body {
 }
 
 .btn.danger-outline {
-  border-color: rgba(224, 100, 90, 0.5);
+  border-color: rgba(224, 100, 90, 0.45);
+  background: transparent;
   color: #f2a39b;
 }
 
-.confirm {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+.btn.danger-outline:hover {
+  background: rgba(224, 100, 90, 0.1);
+}
+
+.segmented {
+  display: inline-flex;
+  gap: 2px;
+  height: var(--control-h);
+  padding: 2px;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--surface-0);
+}
+
+.segmented label {
+  position: relative;
+  display: inline-flex;
   align-items: center;
+  padding: 0 12px;
+  border-radius: 6px;
   font-size: 12.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.segmented label:hover {
+  color: var(--ink-1);
+}
+
+.segmented label.is-on {
+  background: var(--surface-2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  color: var(--ink-1);
+}
+
+.segmented label:focus-within {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 1px;
+}
+
+.segmented input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+/* Switch: the checkbox lies invisible over a drawn track. */
+.toggle {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  width: 34px;
+  height: 20px;
+}
+
+.toggle input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.toggle input:disabled {
+  cursor: default;
+}
+
+.toggle-track {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background-color 0.18s ease;
+}
+
+.toggle-track::after {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #f4f6fa;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  content: "";
+  transition: transform 0.18s ease;
+}
+
+.toggle input:checked + .toggle-track {
+  background: var(--accent);
+}
+
+.toggle input:checked + .toggle-track::after {
+  transform: translateX(14px);
+}
+
+.toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.toggle input:disabled + .toggle-track {
+  opacity: 0.4;
+}
+
+/* Slider: thin track filled up to the thumb (--fill from SettingsForm). */
+.range {
+  width: 100%;
+  height: 20px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent) var(--fill, 0%), rgba(255, 255, 255, 0.14) var(--fill, 0%));
+}
+
+.range::-webkit-slider-thumb {
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border: 0;
+  border-radius: 50%;
+  background: #f4f6fa;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(0, 0, 0, 0.2);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: box-shadow 0.15s ease;
+}
+
+.range:focus-visible {
+  outline: none;
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 3px var(--accent-ring), 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
 .status {
@@ -705,15 +799,406 @@ html[data-window="app"] body {
   color: #f2a39b;
 }
 
+/* ---------- settings ---------- */
+
+/* One centred column of groups (macOS System Settings style): a quiet title
+   above each, rows inside separated by hairlines, text left, control right. */
+.settings {
+  display: grid;
+  gap: 26px;
+  max-width: 760px;
+  margin: 4px auto 0;
+}
+
+.group {
+  min-width: 0;
+}
+
+.group-title {
+  margin: 0 0 8px 2px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+}
+
+.group-body {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.group-foot {
+  margin: 8px 2px 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-4);
+}
+
+.row {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 54px;
+  padding: 11px 16px;
+}
+
+.row + .row,
+.row + .row-note,
+.row-note + .row {
+  border-top: 1px solid var(--line);
+}
+
+.row-text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.row-title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-1);
+}
+
+.row-desc {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.row-control {
+  display: flex;
+  flex: none;
+  gap: 8px;
+  align-items: center;
+}
+
+.row.is-toggle {
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.row.is-toggle:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.row.is-toggle.is-disabled {
+  cursor: default;
+}
+
+.row.is-toggle.is-disabled:hover {
+  background: none;
+}
+
+.row.is-stacked {
+  flex-direction: column;
+  gap: 10px;
+  align-items: stretch;
+}
+
+.row.is-stacked .row-control {
+  display: block;
+}
+
+.row-note {
+  margin: 0;
+  padding: 10px 16px;
+  font-size: 12px;
+}
+
+.provider-title {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.plan-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.input.amount {
+  width: 108px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.select.joined select {
+  width: 74px;
+}
+
+.plan-controls > .select select {
+  width: 112px;
+}
+
+/* One source per line, switches in the same column as every other switch. */
+.source-list {
+  margin: 0 -16px -11px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.source-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.source-item {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 40px;
+  padding: 0 16px 0 32px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.source-item:hover {
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.source-name {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12.5px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--ink-1);
+}
+
+.source-name .key {
+  margin-left: 3px;
+}
+
+.range-control {
+  gap: 12px;
+  width: min(250px, 38vw);
+}
+
+.range-value {
+  min-width: 38px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink-1);
+}
+
+.state-line {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.state-line .dot-on {
+  background: var(--ok);
+}
+
+.state-line .dot-off {
+  background: var(--ink-3);
+}
+
+.about-name .num {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-3);
+}
+
+.group-danger .group-body {
+  border-color: rgba(224, 100, 90, 0.2);
+}
+
+.confirm-row {
+  background: rgba(224, 100, 90, 0.07);
+}
+
+/* Floating save bar: appears with the first unsaved change, stays reachable
+   while scrolling and blurs what is behind it. Hidden, it keeps its room so
+   nothing jumps when it shows up. */
 .settings-actions {
   position: sticky;
-  bottom: 0;
+  bottom: 14px;
+  z-index: 2;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.18s ease, transform 0.18s ease, visibility 0s linear 0.18s;
   display: flex;
   gap: 14px;
   align-items: center;
   justify-content: flex-end;
-  padding: 12px 0 4px;
-  background: linear-gradient(180deg, transparent, var(--surface-0) 40%);
+  padding: 9px 10px 9px 16px;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: rgba(24, 28, 35, 0.82);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+.settings-actions.is-shown {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.settings-actions .status {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-actions,
+  .settings-actions.is-shown {
+    transition: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .row:not(.is-stacked) {
+    flex-wrap: wrap;
+  }
+
+  .range-control {
+    width: 100%;
+  }
+}
+
+/* ---------- settings › accounts ---------- */
+
+.accounts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.account {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 14px 16px;
+}
+
+.account + .account {
+  border-left: 1px solid var(--line);
+}
+
+@media (max-width: 700px) {
+  .accounts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .account + .account {
+    border-top: 1px solid var(--line);
+    border-left: 0;
+  }
+}
+
+.account-head {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.account-provider {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.account-plan {
+  margin-left: auto;
+  padding: 1px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 17px;
+  color: var(--ink-1);
+}
+
+.account-email {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-1);
+}
+
+.account-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.account-facts {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 14px;
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
+.account-facts > div {
+  display: contents;
+}
+
+.account-facts dt {
+  color: var(--ink-3);
+}
+
+.account-facts dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ink-1);
+}
+
+.account-raw {
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.account-raw summary {
+  width: fit-content;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+
+.account-raw summary:hover {
+  color: var(--ink-2);
+}
+
+.account-raw .account-facts {
+  margin-top: 8px;
+}
+
+.account-empty {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
+.account-source {
+  margin: auto 0 0;
+  padding-top: 12px;
+  font-size: 11.5px;
+  color: var(--ink-4);
+}
+
+.account-error {
+  padding: 14px 16px;
 }
 
 /* ---------- states guide ---------- */
@@ -1121,7 +1606,9 @@ html[data-window="app"] body {
 
 .textarea {
   width: 100%;
+  height: auto;
   margin-top: 6px;
+  padding: 8px 10px;
   resize: vertical;
   font: inherit;
   font-size: 13px;
@@ -1267,24 +1754,6 @@ html[data-window="app"] body {
   flex: none;
 }
 
-.btn.with-icon {
-  display: inline-flex;
-  gap: 7px;
-  align-items: center;
-  margin-top: 4px;
-}
-
-.about-name {
-  margin: 0 0 4px;
-  font-size: 14px;
-  color: var(--ink-1);
-}
-
-.about-name .num {
-  margin-left: 4px;
-  font-size: 12.5px;
-  color: var(--ink-3);
-}
 
 .app-foot {
   margin-top: 22px;
@@ -1386,18 +1855,6 @@ html[data-window="app"] body {
   color: var(--ink-1);
 }
 
-.update-line {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 12px;
-  align-items: center;
-}
-
-.update-line .hint {
-  flex: 1 1 220px;
-  margin: 0;
-}
-
 .err-text {
   color: #f2a39b;
 }
@@ -1405,22 +1862,4 @@ html[data-window="app"] body {
 .feedback-intro {
   margin: 4px 0 2px;
   font-size: 13px;
-}
-
-/* Settings › Claude Code v terminálu */
-.claude-code-state {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin: 2px 0 8px;
-  font-size: 13px;
-  color: var(--ink-1);
-}
-
-.claude-code-state .dot-on {
-  background: var(--ok);
-}
-
-.claude-code-state .dot-off {
-  background: var(--ink-3);
 }

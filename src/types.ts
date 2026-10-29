@@ -10,7 +10,7 @@ export type LimitsState = "known" | "stale" | "unknown" | "off";
 
 export interface LimitWindow {
   kind: "5h" | "week" | "weekModel" | "other";
-  label: string;              // e.g. "5h", "týden", "týden · gpt-6", "okno 120 min"
+  label: string;              // e.g. "5h", "týden", "Fable" (Claude weekModel), "týden · gpt-6", "okno 120 min"
   percent: number | null;     // 0..100, null when unknown or afterReset
   resetsAt: number | null;    // epoch s
   fetchedAt: number | null;   // epoch s of last successful read
@@ -137,4 +137,51 @@ export interface ClaudeCodeStatus {
   ownStatusLine: boolean;            // the user's own status line keeps running inside Skylimit's
   lastReadingAt: number | null;      // when Claude Code last delivered limits (epoch s)
   problem: string;                   // why connecting cannot work (macOS app not in Applications)
+}
+
+// Settings › Účty, shell command `accounts` (src-tauri/src/commands.rs). Enum
+// values stay raw (plans, roles, tiers); format.ts labels them. Never part of
+// the snapshot, so the e-mails never reach the widget.
+
+/** The account Claude Code is signed in with (`oauthAccount` in its .claude.json). */
+export interface ClaudeAccount {
+  email: string | null;
+  name: string | null;
+  organization: string | null;
+  organizationType: string | null;   // "claude_max", "claude_team", …
+  role: string | null;               // "admin", "membership_admin", …
+  seatTier: string | null;           // "team_tier_1", …
+  rateLimitTier: string | null;      // "default_claude_max_5x", …
+  billing: string | null;            // "stripe_subscription", …
+  accountCreatedAt: number | null;   // epoch s
+  subscriptionCreatedAt: number | null;
+  extraUsage: boolean | null;        // extra usage past the plan's limits switched on
+  extraUsageBlocked: string | null;  // why it cannot be used now ("out_of_credits", …)
+  profileFetchedAt: number | null;   // when Claude Code last refreshed the profile
+  limitsFetchedAt: number | null;    // … and the limits
+}
+
+export interface CodexCredits {
+  hasCredits: boolean;
+  unlimited: boolean;
+  balance: string | null;
+}
+
+/** The account the Codex CLI is signed in with (app-server `account/read`). */
+export interface CodexAccount {
+  kind: string;                      // "chatgpt" | "apiKey" | "amazonBedrock" | "gcp" | "none"
+  email: string | null;
+  plan: string | null;               // "plus", "pro", "team", …
+  workspace: string | null;
+  cliVersion: string | null;
+  resetCredits: number | null;       // limit resets still available
+  credits: CodexCredits | null;
+  lifetimeTokens: number | null;
+  readAt: number;                    // epoch s
+}
+
+export interface Accounts {
+  claude: ClaudeAccount | null;
+  codex: CodexAccount | null;
+  codexNote: string | null;          // why there is no Codex account ("Codex CLI nenalezen", …)
 }

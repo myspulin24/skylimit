@@ -1,7 +1,7 @@
 // Czech formatting helpers. All UI numbers go through here so that the widget,
 // the app window and the tests agree on spacing, decimals and wording.
 
-import type { Mood, Provider, ScoreState, Snapshot } from "./types";
+import type { CodexCredits, Mood, Provider, ScoreState, Snapshot } from "./types";
 
 /** Non-breaking space: Czech typography keeps a number and its unit together. */
 export const NBSP = "\u00a0";
@@ -215,4 +215,126 @@ export function shortDate(date: string): string {
 /** Score states that make the number uncertain enough to show a "?" on it. */
 export function isUncertainScore(state: ScoreState): boolean {
   return state === "unknown" || state === "formatChanged";
+}
+
+// ---------- Settings › Účty: raw values from Claude Code and Codex in Czech
+
+/** "28. 3. 2026" from epoch seconds (Prague calendar). */
+export function formatDate(epochSec: number): string {
+  const d = new Date(epochSec * 1000);
+  const parts = new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", day: "numeric", month: "numeric", year: "numeric" })
+    .formatToParts(d)
+    .filter((p) => p.type !== "literal")
+    .map((p) => p.value);
+  return parts.join(`.${NBSP}`);
+}
+
+/** Unknown values stay readable instead of hidden: "team_tier_1" → "team tier 1". */
+export function humanize(raw: string): string {
+  return raw.replace(/[_-]+/g, " ").trim();
+}
+
+const CLAUDE_PLAN: Record<string, string> = {
+  claude_free: "Free",
+  claude_pro: "Pro",
+  claude_max: "Max",
+  claude_team: "Team",
+  claude_enterprise: "Enterprise",
+};
+
+/** Claude Code's `organizationType` → plan name ("claude_team" → "Team"). */
+export function claudePlanLabel(organizationType: string | null): string | null {
+  if (!organizationType) return null;
+  return CLAUDE_PLAN[organizationType] ?? humanize(organizationType.replace(/^claude_/, ""));
+}
+
+/** The usage tier behind the plan: "default_claude_max_5x" → "Max 5×" (a Team premium seat has one too). */
+export function claudeTierLabel(tier: string | null): string | null {
+  const m = tier ? /max_(\d+)x/.exec(tier) : null;
+  return m ? `Max ${m[1]}×` : null;
+}
+
+const CLAUDE_ROLE: Record<string, string> = {
+  primary_owner: "hlavní vlastník",
+  owner: "vlastník",
+  admin: "správce",
+  membership_admin: "správce členů",
+  billing: "fakturace",
+  developer: "vývojář",
+  claude_code_user: "uživatel Claude Code",
+  user: "člen",
+  member: "člen",
+};
+
+export function claudeRoleLabel(role: string | null): string | null {
+  return role ? (CLAUDE_ROLE[role] ?? humanize(role)) : null;
+}
+
+const BILLING: Record<string, string> = {
+  stripe_subscription: "přes web (Stripe)",
+  apple_subscription: "přes App Store",
+  google_play_subscription: "přes Google Play",
+  aws_marketplace: "přes AWS Marketplace",
+};
+
+export function billingLabel(billing: string | null): string | null {
+  return billing ? (BILLING[billing] ?? humanize(billing)) : null;
+}
+
+const EXTRA_BLOCKED: Record<string, string> = {
+  out_of_credits: "kredit vyčerpaný",
+  org_level_disabled: "vypnuté organizací",
+  member_level_disabled: "vypnuté pro tvůj účet",
+  overage_not_provisioned: "pro účet není k dispozici",
+};
+
+/** Extra usage past the plan's limits: "zapnuté, kredit vyčerpaný". */
+export function extraUsageLabel(on: boolean | null, blocked: string | null): string | null {
+  if (on === null) return null;
+  if (!on) return "vypnuté";
+  return blocked ? `zapnuté, ${EXTRA_BLOCKED[blocked] ?? humanize(blocked)}` : "zapnuté";
+}
+
+const CODEX_PLAN: Record<string, string> = {
+  free: "Free",
+  go: "Go",
+  plus: "Plus",
+  pro: "Pro",
+  prolite: "Pro Lite",
+  promax: "Pro Max",
+  team: "Team",
+  business: "Business",
+  enterprise: "Enterprise",
+  edu: "Edu",
+};
+
+/** ChatGPT `planType` → plan name ("team" → "Team"); "unknown" says nothing. */
+export function codexPlanLabel(plan: string | null): string | null {
+  if (!plan || plan === "unknown") return null;
+  return CODEX_PLAN[plan] ?? humanize(plan);
+}
+
+const CODEX_KIND: Record<string, string> = {
+  chatgpt: "účet ChatGPT",
+  apiKey: "API klíč OpenAI",
+  amazonBedrock: "Amazon Bedrock",
+  gcp: "Google Cloud Vertex AI",
+  none: "nepřihlášeno",
+};
+
+export function codexKindLabel(kind: string): string {
+  return CODEX_KIND[kind] ?? humanize(kind);
+}
+
+/** Prepaid Codex credits: "neomezené", "žádné", or the balance as Codex reports it. */
+export function codexCreditsLabel(credits: CodexCredits | null): string | null {
+  if (!credits) return null;
+  if (credits.unlimited) return "neomezené";
+  if (!credits.hasCredits) return "žádné";
+  return credits.balance ?? "ano";
+}
+
+/** "1 reset", "2 resety", "5 resetů" */
+export function formatResets(n: number): string {
+  return `${n}${NBSP}${plural(n, "reset", "resety", "resetů")}`;
 }

@@ -74,7 +74,7 @@ Historie i nastavení zůstanou. Na Linuxu se aktualizuje AppImage, balíček
 
 | Nástroj | K čemu | Bez něj |
 | --- | --- | --- |
-| [Claude Code](https://code.claude.com) | Skóre Claude ze záznamů v `~/.claude/projects`; po připojení i limity Claude ze stavového řádku | Skóre Claude zůstane prázdné |
+| [Claude Code](https://code.claude.com) | Skóre Claude ze záznamů v `~/.claude/projects`; limity Claude (i týdenní limit Fable) z jeho vlastní mezipaměti v `~/.claude.json`, po připojení i ze stavového řádku; přihlášený účet | Skóre Claude zůstane prázdné |
 | [Codex CLI](https://github.com/openai/codex), přihlášený | Limity a spotřeba Codexu přes `codex app-server`. Na macOS a Linuxu si Skylimit cestu k němu zjistí z tvého shellu, i když běží z Docku nebo nabídky | Řádky Codexu ukážou „Codex CLI nenalezen“ |
 | [T3 Code](https://github.com/pingdotgg/t3code) (volitelně) | Limity Claude z jeho logů | Bez T3 Code i bez připojeného Claude Code stojí místo limitů Claude „připoj Claude Code v Nastavení“ |
 
@@ -89,6 +89,8 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
 
 - **Limity 5h a týden** pro Claude i Codex: procenta, odpočet do resetu
   a barva podle zaplnění (zelená, od 75 % oranžová, od 95 % červená).
+  Pod týdenním limitem Claude je menší řádek **Fable**, pokud má účet na
+  Fable vlastní týdenní limit.
 - **Skóre měsíce v cenách API** s násobkem paušálu („vytěženo 4,6×“)
   a křivkou po dnech.
 - **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned, **bublina**
@@ -128,9 +130,10 @@ v aplikaci ukáže všechny s velkým animovaným náhledem.
   dnů a rozpad podle zdroje (terminál, T3 Code, Claude Desktop, Codex),
   modelu a projektu.
 - **Stavy:** všechny nálady, stavy řádků limitů, značky u skóre a barvy ikony.
-- **Nastavení:** paušál a měna (EUR, CZK), co nepočítat do skóre,
-  průhlednost widgetu, průchod kliknutí, smazání historie a **O aplikaci**
-  (verze, licence).
+- **Nastavení:** **Účty** (s jakým účtem Claude a Codexu je Skylimit
+  spojený: e-mail, tarif, organizace nebo workspace, role, resety limitu),
+  paušál a měna (EUR, CZK), co počítat do skóre, průhlednost widgetu,
+  průchod kliknutí, smazání historie a **O aplikaci** (verze, licence).
 - **Zpětná vazba:** formulář pro chybu, změnu nebo vylepšení s volitelnou
   přílohou. Snímek obrazovky jde vložit rovnou ze schránky (⌘V, Ctrl+V).
   Viz [Soukromí](#soukromí-a-oprávnění).
@@ -145,7 +148,9 @@ Snímky v tomto README ukazují smyšlená demo data.
 | --- | --- | --- |
 | Limity Codexu | Oficiální `codex app-server` (JSON-RPC, `account/rateLimits/read`) | Každé 2 minuty a po každé změně |
 | Spotřeba Codexu | `account/usage/read`: denní součty tokenů | Každých 5 minut |
-| Limity Claude | `rate_limits`, které Claude Code předává svému [stavovému řádku](https://code.claude.com/docs/en/statusline) (po připojení v Nastavení), a události `rate_limit_event`, které Claude Agent SDK předává T3 Code a ten je zapisuje do `~/.t3/userdata/logs/provider`. Platí novější číslo | Po každé odpovědi v Claude Code nebo T3 Code, kontrola každých 5 s |
+| Limity Claude | Tři pasivní zdroje, platí novější číslo: limity, které si Claude Code sám načítá a ukládá do `~/.claude.json` (`cachedUsageUtilization`); `rate_limits`, které Claude Code předává svému [stavovému řádku](https://code.claude.com/docs/en/statusline) (po připojení v Nastavení); události `rate_limit_event`, které Claude Agent SDK předává T3 Code a ten je zapisuje do `~/.t3/userdata/logs/provider` | Mezipaměť Claude Code zhruba každých 10 minut, dokud Claude Code běží; ostatní po každé odpovědi. Kontrola každých 5 s |
+| Limit Fable | Týdenní limit jen pro Fable z téže mezipaměti Claude Code (`weekly_scoped`) nebo z okna `seven_day_overage_included` v událostech T3 Code. Stárne jen prací s Fable | Stejně jako limity Claude |
+| Účty | Claude: `oauthAccount` v `~/.claude.json`. Codex: `account/read` z `codex app-server` | Při otevřeném Nastavení každých 20 s |
 | Skóre Claude | Záznamy Claude Code (`~/.claude/projects/**/*.jsonl`) × ceník API (snímek [LiteLLM](https://github.com/BerriAI/litellm)) | Hned po změně souboru |
 | Kurz | Denní kurz [ČNB](https://www.cnb.cz) | Jednou denně |
 
@@ -155,7 +160,7 @@ značkou „odhad“ a dá se vypnout v nastavení.
 
 **Proč ne přímo z účtu Claude:** podmínky Anthropicu nedovolují aplikacím
 třetích stran používat přihlašovací token Claude. Skylimit proto bere jen to,
-co mu Claude Code a T3 Code samy předají. Claude Desktop limity nehlásí;
+co si Claude Code a T3 Code samy načtou a uloží. Claude Desktop limity nehlásí;
 když se Claude po posledním hlášení použije tam, ukáže widget číslo s
 vlnovkou jako „poslední známé“.
 
@@ -249,7 +254,8 @@ src/                     Rozhraní (React): widget, okno aplikace, dialogy
 crates/usage-core/       Jádro bez Tauri: zdroje dat, ceník, skóre, nálady, SQLite
   src/claude.rs            záznamy Claude Code (JSONL)
   src/codex.rs             codex app-server (JSON-RPC)
-  src/claude_limits.rs     limity Claude: novější ze dvou zdrojů
+  src/claude_limits.rs     limity Claude: novější ze tří zdrojů, okno Fable zvlášť
+  src/claude_config.rs     účet a mezipaměť limitů z ~/.claude.json Claude Code
   src/claude_code.rs       limity ze stavového řádku Claude Code
   src/t3.rs                limity z logů T3 Code
 src-tauri/               Shell: okna, ikona v oznamovací oblasti, příkazy, zpětná vazba
@@ -272,8 +278,13 @@ nevyšla nová verze. Codex CLI komunikuje s OpenAI sám, jako oficiální klien
 Skylimit jen čte, co vrátí.
 
 Přihlašovací údaje se nečtou nikdy: ani `~/.claude/.credentials.json`, ani
-`~/.codex/auth.json`. Z logů T3 Code, ve kterých jsou celé konverzace, se
-berou jen čísla limitů. Ze vstupu stavového řádku Claude Code si Skylimit
+`~/.codex/auth.json`. Z `~/.claude.json` Claude Code se čtou jen dva klíče,
+`oauthAccount` (e-mail, jméno, organizace, tarif) a `cachedUsageUtilization`
+(procenta limitů); zbytek souboru se přeskočí, aniž by se kamkoli uložil.
+Účet Codexu (e-mail, tarif, workspace) vrací `codex app-server` na dotaz
+`account/read`. Účty se ukazují jen v **Nastavení › Účty**, do widgetu ani
+do zpětné vazby se nedostanou. Z logů T3 Code, ve kterých jsou celé
+konverzace, se berou jen čísla limitů. Ze vstupu stavového řádku Claude Code si Skylimit
 nechá jen procenta limitů, čas resetu, identifikátor relace a počítadla, podle
 kterých pozná novou odpověď. Pracovní složku, model ani cestu k přepisu
 neukládá. Do `~/.claude/settings.json` zapisuje jen po kliknutí na
@@ -309,7 +320,7 @@ Každé okno smí jen své příkazy (systémem vynucený seznam v
 | Okno | Smí |
 | --- | --- |
 | Widget | Číst snímek, otevřít okno aplikace, vyžádat obnovení dat, přetahovat se |
-| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu, připojit a odpojit Claude Code, zapnout a vypnout spouštění po přihlášení |
+| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu, připojit a odpojit Claude Code, zapnout a vypnout spouštění po přihlášení, ukázat přihlášené účty |
 
 ---
 

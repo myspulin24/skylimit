@@ -35,6 +35,8 @@ const NEEDLE: &[u8] = b"rate_limit_event";
 const FIRST_READ_MAX: u64 = 4 << 20;
 /// Files untouched for longer cannot hold a reading of the current week.
 const MAX_FILE_AGE: i64 = 8 * 86_400;
+/// The SDK's name of the weekly Fable window.
+const FABLE_WINDOW: &str = "seven_day_overage_included";
 
 // ---------------------------------------------------------------- parsing
 
@@ -84,20 +86,25 @@ fn reading_from_info(info: &Value, at: i64) -> Option<ClaudeReading> {
         at,
         five_hour: None,
         seven_day: None,
+        fable: None,
     };
     if let Some(windows) = info.get("unifiedWindows").and_then(Value::as_object) {
         r.five_hour = windows.get("five_hour").and_then(window);
         r.seven_day = windows.get("seven_day").and_then(window);
+        // Claude Code labels this per-model weekly bucket "Fable limit"; the
+        // SDK sends it only for accounts whose responses carry it.
+        r.fable = windows.get(FABLE_WINDOW).and_then(window);
     }
     // Without `unifiedWindows` an event describes the one window it names.
-    if r.five_hour.is_none() && r.seven_day.is_none() {
+    if !r.has_main() && r.fable.is_none() {
         match info.get("rateLimitType").and_then(Value::as_str) {
             Some("five_hour") => r.five_hour = window(info),
             Some("seven_day") => r.seven_day = window(info),
+            Some(FABLE_WINDOW) => r.fable = window(info),
             _ => {}
         }
     }
-    (r.five_hour.is_some() || r.seven_day.is_some()).then_some(r)
+    (r.has_main() || r.fable.is_some()).then_some(r)
 }
 
 /// `utilization` is a fraction (0.05 = 5 %, the same number Claude shows in
@@ -241,6 +248,19 @@ mod tests {
         let r = parse_line(line.as_bytes(), 0).unwrap();
         assert!(r.five_hour.is_none());
         assert_eq!(r.seven_day.unwrap().percent, 100.0);
+    }
+
+    #[test]
+    fn the_overage_included_window_is_fable() {
+        let line = r#"[2026-10-28T10:00:00Z] X: {"payload":{"type":"rate_limit_event","rate_limit_info":{"status":"allowed","rateLimitType":"five_hour","unifiedWindows":{"five_hour":{"utilization":0.1,"resetsAt":1793223000},"seven_day":{"utilization":0.2,"resetsAt":1793725200},"seven_day_overage_included":{"utilization":0.375,"resetsAt":1793725200}}}}}"#;
+        let r = parse_line(line.as_bytes(), 0).unwrap();
+        assert_eq!(r.fable.unwrap(), ClaudeWindow { percent: 37.5, resets_at: Some(1_793_725_200) });
+        assert_eq!(r.seven_day.unwrap().percent, 20.0);
+
+        let alone = r#"[2026-10-28T10:00:00Z] X: {"payload":{"type":"rate_limit_event","rate_limit_info":{"status":"rejected","resetsAt":1793725200,"rateLimitType":"seven_day_overage_included"}}}"#;
+        let r = parse_line(alone.as_bytes(), 0).unwrap();
+        assert!(!r.has_main());
+        assert_eq!(r.fable.unwrap().percent, 100.0);
     }
 
     #[test]

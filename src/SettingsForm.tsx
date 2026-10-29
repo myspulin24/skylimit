@@ -2,13 +2,16 @@
 // Settings object to the core. Click-through and widget transparency apply
 // immediately because the user wants to see the widget react while the app
 // window is open; so does starting at login (AutostartCheck), which lives in
-// the system, not in Settings. Two columns on wide windows, one below 980 px
-// (app.css).
+// the system, not in Settings. One centred column of titled groups, each a
+// list of rows with the text left and the control right (controls.tsx,
+// app.css "settings").
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
+import { AccountsCard } from "./AccountsCard";
 import { clearHistory, getSettings, setClickThrough, setSettings, setWidgetTransparency } from "./api";
 import { AutostartCheck } from "./AutostartCheck";
 import { ClaudeCodeCard } from "./ClaudeCodeCard";
+import { Group, Row, Select, Toggle, ToggleRow } from "./controls";
 import { PROVIDER_NAME, sourceLabel } from "./format";
 import { FeedbackIcon } from "./icons";
 import { UpdateLine } from "./update";
@@ -17,8 +20,8 @@ import type { PlanSetting, Provider, Settings, Snapshot, UpdateStatus } from "./
 type PlanCurrency = PlanSetting["currency"];
 type PlanPeriod = PlanSetting["period"];
 
+/** An empty amount means no plan; currency and period stay as chosen. */
 interface PlanDraft {
-  unset: boolean;
   amount: string;
   currency: PlanCurrency;
   period: PlanPeriod;
@@ -41,8 +44,8 @@ const PROVIDERS: Provider[] = ["claude", "codex"];
 
 function toPlanDraft(plan: PlanSetting | null): PlanDraft {
   return plan
-    ? { unset: false, amount: String(plan.amount).replace(".", ","), currency: plan.currency, period: plan.period }
-    : { unset: true, amount: "", currency: "USD", period: "month" };
+    ? { amount: String(plan.amount).replace(".", ","), currency: plan.currency, period: plan.period }
+    : { amount: "", currency: "USD", period: "month" };
 }
 
 function toDraft(s: Settings): Draft {
@@ -55,6 +58,12 @@ function toDraft(s: Settings): Draft {
     widgetTransparency: s.widgetTransparency,
     checkUpdates: s.checkUpdates,
   };
+}
+
+/** What "Uložit" would change: click-through and transparency are already applied. */
+function pending(a: Draft, b: Draft): boolean {
+  const saved = (d: Draft) => JSON.stringify({ ...d, clickThrough: null, widgetTransparency: null });
+  return saved(a) !== saved(b);
 }
 
 /** "1 234,50" → 1234.5; null when not a positive number. */
@@ -70,12 +79,12 @@ function toSettings(d: Draft): Settings | { error: string } {
   const plans = {} as Settings["plans"];
   for (const p of PROVIDERS) {
     const plan = d.plans[p];
-    if (plan.unset) {
+    if (plan.amount.trim() === "") {
       plans[p] = null;
       continue;
     }
     const amount = parseAmount(plan.amount);
-    if (amount === null) return { error: `Paušál ${PROVIDER_NAME[p]}: zadej kladnou částku, nebo zaškrtni „nezadáno“.` };
+    if (amount === null) return { error: `Paušál ${PROVIDER_NAME[p]}: zadej kladnou částku, nebo pole nech prázdné.` };
     plans[p] = { amount, currency: plan.currency, period: plan.period };
   }
   return {
@@ -102,6 +111,8 @@ export function SettingsForm({
   onOpenFeedback: () => void;
 }) {
   const [draft, setDraft] = useState<Draft | null>(null);
+  // Last loaded or saved state: the save bar shows only while the draft differs.
+  const [baseline, setBaseline] = useState<Draft | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
   const [clear, setClear] = useState<ClearState>("idle");
@@ -112,7 +123,11 @@ export function SettingsForm({
   useEffect(() => {
     let alive = true;
     getSettings().then(
-      (s) => alive && setDraft(toDraft(s)),
+      (s) => {
+        if (!alive) return;
+        setDraft(toDraft(s));
+        setBaseline(toDraft(s));
+      },
       (err: unknown) => alive && setLoadError(String(err)),
     );
     return () => {
@@ -136,8 +151,8 @@ export function SettingsForm({
     ...draft.excludedEntrypoints.filter((k) => !snapshot?.bySource.some((r) => r.key === k)),
   ];
 
-  const toggleExcluded = (key: string, excluded: boolean) => {
-    const next = excluded ? [...draft.excludedEntrypoints, key] : draft.excludedEntrypoints.filter((k) => k !== key);
+  const setCounted = (key: string, counted: boolean) => {
+    const next = counted ? draft.excludedEntrypoints.filter((k) => k !== key) : [...draft.excludedEntrypoints, key];
     update_({ excludedEntrypoints: sourceKeys.filter((k) => next.includes(k)) });
   };
 
@@ -176,6 +191,7 @@ export function SettingsForm({
     setStatus({ kind: "saving" });
     try {
       await setSettings(result);
+      setBaseline(draft);
       setStatus({ kind: "saved" });
     } catch (err) {
       setStatus({ kind: "error", text: `Uložení selhalo: ${String(err)}` });
@@ -192,127 +208,129 @@ export function SettingsForm({
     }
   };
 
+  const dirty = baseline !== null && pending(draft, baseline);
+  const statusText =
+    status.kind === "error"
+      ? status.text
+      : status.kind === "saving"
+        ? "Ukládám…"
+        : dirty
+          ? "Máš neuložené změny."
+          : status.kind === "saved"
+            ? "Uloženo."
+            : "";
+
+  // The slider track fills up to the thumb (app.css reads --fill).
+  const fill = { "--fill": `${(draft.widgetTransparency / TRANSPARENCY_MAX) * 100}%` } as CSSProperties;
+
   return (
     <form className="settings" onSubmit={onSubmit} aria-label="Nastavení">
-      <div className="settings-col">
-        <section className="card settings-card">
-          <h2>Paušál</h2>
-          <p className="hint">Kolik platíš za předplatné. Z toho se počítá násobek „vytěženo ×“.</p>
-          {PROVIDERS.map((p) => {
-            const plan = draft.plans[p];
-            const name = PROVIDER_NAME[p];
-            return (
-              <div key={p} className="plan-row">
-                <span className="plan-name">
+      <AccountsCard />
+
+      <Group title="Paušál" footer="Kolik platíš za předplatné. Z toho se počítá násobek „vytěženo ×“. Prázdné pole znamená bez paušálu.">
+        {PROVIDERS.map((p) => {
+          const plan = draft.plans[p];
+          const name = PROVIDER_NAME[p];
+          return (
+            <Row
+              key={p}
+              title={
+                <span className="provider-title">
                   <i className={`dot dot-${p}`} aria-hidden="true" />
                   {name}
                 </span>
-                <input
-                  className="input amount"
-                  type="text"
-                  inputMode="decimal"
-                  aria-label={`Částka paušálu ${name}`}
-                  placeholder="částka"
-                  value={plan.amount}
-                  disabled={plan.unset}
-                  onChange={(e) => updatePlan(p, { amount: e.target.value })}
-                />
-                <select
-                  className="input"
-                  aria-label={`Měna paušálu ${name}`}
-                  value={plan.currency}
-                  disabled={plan.unset}
-                  onChange={(e) => updatePlan(p, { currency: e.target.value as PlanCurrency })}
-                >
-                  <option value="EUR">EUR</option>
-                  <option value="CZK">CZK</option>
-                  <option value="USD">USD</option>
-                </select>
-                <select
-                  className="input"
+              }
+            >
+              <div className="plan-controls">
+                <span className="input-group">
+                  <input
+                    className="input amount"
+                    type="text"
+                    inputMode="decimal"
+                    aria-label={`Částka paušálu ${name}`}
+                    placeholder="nezadáno"
+                    value={plan.amount}
+                    onChange={(e) => updatePlan(p, { amount: e.target.value })}
+                  />
+                  <Select
+                    className="joined"
+                    aria-label={`Měna paušálu ${name}`}
+                    value={plan.currency}
+                    onChange={(e) => updatePlan(p, { currency: e.target.value as PlanCurrency })}
+                  >
+                    <option value="EUR">EUR</option>
+                    <option value="CZK">CZK</option>
+                    <option value="USD">USD</option>
+                  </Select>
+                </span>
+                <Select
                   aria-label={`Období paušálu ${name}`}
                   value={plan.period}
-                  disabled={plan.unset}
                   onChange={(e) => updatePlan(p, { period: e.target.value as PlanPeriod })}
                 >
-                  <option value="month">za měsíc</option>
-                  <option value="year">za rok</option>
-                </select>
-                <label className="check compact">
-                  <input
-                    type="checkbox"
-                    aria-label={`Paušál ${name} nezadáno`}
-                    checked={plan.unset}
-                    onChange={(e) => updatePlan(p, { unset: e.target.checked })}
-                  />
-                  nezadáno
-                </label>
+                  <option value="month">měsíčně</option>
+                  <option value="year">ročně</option>
+                </Select>
               </div>
-            );
-          })}
-        </section>
+            </Row>
+          );
+        })}
+      </Group>
 
-        <section className="card settings-card">
-          <h2>Skóre</h2>
-          <label className="check">
-            <input
-              type="checkbox"
-              checked={draft.codexEstimateInScore}
-              onChange={(e) => update_({ codexEstimateInScore: e.target.checked })}
-            />
-            Započítat odhad Codexu do skóre
-          </label>
-          <fieldset className="field">
-            <legend>Nepočítat do skóre</legend>
-            <p className="hint">
-              Skóre počítá vše z lokálních záznamů. Provoz mimo předplatné (třeba aplikace nad SDK s vlastním API klíčem) tu
-              můžeš vyřadit.
-            </p>
-            {sourceKeys.length === 0 ? (
-              <p className="hint">Zatím žádné zdroje.</p>
-            ) : (
-              <div className="check-list">
-                {sourceKeys.map((key) => (
-                  <label key={key} className="check">
-                    <input
-                      type="checkbox"
-                      checked={draft.excludedEntrypoints.includes(key)}
-                      onChange={(e) => toggleExcluded(key, e.target.checked)}
+      <Group title="Skóre">
+        <Row title="Měna skóre">
+          <div className="segmented" role="radiogroup" aria-label="Měna skóre">
+            {(["EUR", "CZK"] as const).map((c) => (
+              <label key={c} className={draft.currency === c ? "is-on" : undefined}>
+                <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update_({ currency: c })} />
+                {c === "EUR" ? "EUR (€)" : "CZK (Kč)"}
+              </label>
+            ))}
+          </div>
+        </Row>
+        <ToggleRow
+          title="Započítat odhad Codexu do skóre"
+          desc="Codex hlásí jen denní součty tokenů, jeho cena je proto odhad."
+          checked={draft.codexEstimateInScore}
+          onChange={(on) => update_({ codexEstimateInScore: on })}
+        />
+        <Row
+          stacked
+          title="Co se počítá do skóre"
+          desc="Skóre počítá vše z lokálních záznamů. Provoz mimo předplatné (třeba aplikaci nad SDK s vlastním API klíčem) tu můžeš vypnout."
+        >
+          {sourceKeys.length === 0 ? (
+            <p className="row-desc">Zatím žádné zdroje.</p>
+          ) : (
+            <ul className="source-list">
+              {sourceKeys.map((key) => (
+                <li key={key}>
+                  <label className="source-item">
+                    <span className="source-name">
+                      {sourceLabel(key)} <span className="key">{key}</span>
+                    </span>
+                    <Toggle
+                      label={`${sourceLabel(key)} (${key})`}
+                      checked={!draft.excludedEntrypoints.includes(key)}
+                      onChange={(counted) => setCounted(key, counted)}
                     />
-                    {sourceLabel(key)} <span className="key">({key})</span>
                   </label>
-                ))}
-              </div>
-            )}
-          </fieldset>
-        </section>
-
-        <ClaudeCodeCard />
-      </div>
-
-      <div className="settings-col">
-        <section className="card settings-card">
-          <h2>Zobrazení</h2>
-          <fieldset className="field">
-            <legend>Měna skóre</legend>
-            <div className="segmented">
-              {(["EUR", "CZK"] as const).map((c) => (
-                <label key={c} className={draft.currency === c ? "is-on" : undefined}>
-                  <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update_({ currency: c })} />
-                  {c === "EUR" ? "EUR (€)" : "CZK (Kč)"}
-                </label>
+                </li>
               ))}
-            </div>
-          </fieldset>
-        </section>
+            </ul>
+          )}
+        </Row>
+      </Group>
 
-        <section className="card settings-card">
-          <h2>Widget</h2>
-          <div className="range-field">
-            <label htmlFor="widget-transparency">Průhlednost widgetu</label>
-            <output htmlFor="widget-transparency" className="range-value num">
-              {draft.widgetTransparency} %
-            </output>
+      <Group title="Widget">
+        <div className="row">
+          <div className="row-text">
+            <label className="row-title" htmlFor="widget-transparency">
+              Průhlednost widgetu
+            </label>
+            <div className="row-desc">Průhledné je jen pozadí, text, pruhy a postavičky zůstanou čitelné.</div>
+          </div>
+          <div className="row-control range-control">
             <input
               id="widget-transparency"
               className="range"
@@ -320,76 +338,90 @@ export function SettingsForm({
               min={0}
               max={TRANSPARENCY_MAX}
               step={5}
+              style={fill}
               value={draft.widgetTransparency}
               onChange={(e) => onTransparency(Number(e.target.value))}
             />
+            <output htmlFor="widget-transparency" className="range-value num">
+              {draft.widgetTransparency} %
+            </output>
           </div>
-          <p className="hint">Průhledné je jen pozadí; text, pruhy a postavičky zůstanou čitelné. Projeví se hned.</p>
-          <label className="check">
-            <input type="checkbox" checked={draft.clickThrough} onChange={(e) => onClickThrough(e.target.checked)} />
-            Průchod kliknutí (widget nereaguje na myš)
-          </label>
-          <p className="hint">Vypnout jde i z ikony v oznamovací oblasti.</p>
-          <AutostartCheck />
-        </section>
+        </div>
+        <ToggleRow
+          title="Průchod kliknutí"
+          desc="Widget nereaguje na myš. Vypnout jde i z ikony v oznamovací oblasti."
+          checked={draft.clickThrough}
+          onChange={onClickThrough}
+        />
+        <AutostartCheck />
+      </Group>
 
-        <section className="card settings-card about">
-          <h2>O aplikaci</h2>
-          <p className="about-name">
-            <b>Skylimit</b> <span className="num">{__APP_VERSION__}</span>
-          </p>
-          <p className="hint">
-            Widget, který hlídá limity Claude a Codexu a počítá práci v cenách API.
-            <br />
-            &copy; 2026 Michal Jašek &middot; licence MIT &middot; github.com/myspulin24/skylimit
-          </p>
+      <ClaudeCodeCard />
+
+      <Group title="O aplikaci">
+        <Row
+          title={
+            <span className="about-name">
+              Skylimit <span className="num">{__APP_VERSION__}</span>
+            </span>
+          }
+          desc="Widget, který hlídá limity Claude a Codexu a počítá práci v cenách API. © 2026 Michal Jašek · licence MIT · github.com/myspulin24/skylimit"
+        >
           <button type="button" className="btn with-icon" onClick={onOpenFeedback}>
             <FeedbackIcon />
             Poslat zpětnou vazbu
           </button>
+        </Row>
+        <UpdateLine status={update} />
+        <ToggleRow
+          title="Hledat novou verzi automaticky"
+          desc="Po spuštění a pak každých 6 hodin."
+          checked={draft.checkUpdates}
+          onChange={(on) => update_({ checkUpdates: on })}
+        />
+      </Group>
 
-          <fieldset className="field">
-            <legend>Aktualizace</legend>
-            <UpdateLine status={update} />
-            <label className="check">
-              <input type="checkbox" checked={draft.checkUpdates} onChange={(e) => update_({ checkUpdates: e.target.checked })} />
-              Hledat novou verzi automaticky
-            </label>
-          </fieldset>
-        </section>
-
-        <section className="card settings-card danger-zone">
-          <h2>Historie</h2>
-          <p className="hint">
-            Historie skóre je jediná kopie: Claude Code staré záznamy časem maže, takže smazanou historii už nepůjde obnovit.
-          </p>
-          {clear === "confirm" || clear === "busy" ? (
-            <div className="confirm" role="alertdialog" aria-label="Potvrzení smazání historie">
-              <span>Opravdu smazat celou historii? Tohle nejde vrátit.</span>
-              <button type="button" className="btn danger" disabled={clear === "busy"} onClick={() => void onConfirmClear()}>
-                Ano, smazat natrvalo
-              </button>
+      <Group title="Historie" tone="danger">
+        {clear === "confirm" || clear === "busy" ? (
+          <div className="row confirm-row" role="alertdialog" aria-label="Potvrzení smazání historie">
+            <div className="row-text">
+              <div className="row-title">Opravdu smazat celou historii?</div>
+              <div className="row-desc">Tohle nejde vrátit.</div>
+            </div>
+            <div className="row-control">
               <button type="button" className="btn" disabled={clear === "busy"} onClick={() => setClear("idle")}>
                 Zrušit
               </button>
-            </div>
-          ) : (
-            <div className="confirm">
-              <button type="button" className="btn danger-outline" onClick={() => setClear("confirm")}>
-                Smazat historii
+              <button type="button" className="btn danger" disabled={clear === "busy"} onClick={() => void onConfirmClear()}>
+                Ano, smazat natrvalo
               </button>
-              {clear === "done" && <span className="status ok">Historie smazána.</span>}
-              {clear === "error" && <span className="status err">Historii se nepodařilo smazat.</span>}
             </div>
-          )}
-        </section>
-      </div>
+          </div>
+        ) : (
+          <Row
+            title="Smazat historii skóre"
+            desc={
+              clear === "done" ? (
+                <span className="status ok">Historie smazána.</span>
+              ) : clear === "error" ? (
+                <span className="status err">Historii se nepodařilo smazat.</span>
+              ) : (
+                "Historie je jediná kopie: Claude Code staré záznamy časem maže, takže smazanou historii už nepůjde obnovit."
+              )
+            }
+          >
+            <button type="button" className="btn danger-outline" onClick={() => setClear("confirm")}>
+              Smazat historii
+            </button>
+          </Row>
+        )}
+      </Group>
 
-      <div className="settings-actions">
+      <div className={dirty || status.kind !== "idle" ? "settings-actions is-shown" : "settings-actions"}>
         <span className={`status ${status.kind === "error" ? "err" : "ok"}`} role="status">
-          {status.kind === "saved" ? "Uloženo." : status.kind === "saving" ? "Ukládám…" : status.kind === "error" ? status.text : ""}
+          {statusText}
         </span>
-        <button type="submit" className="btn primary" disabled={status.kind === "saving"}>
+        <button type="submit" className="btn primary" disabled={status.kind === "saving" || (!dirty && status.kind !== "error")}>
           Uložit
         </button>
       </div>

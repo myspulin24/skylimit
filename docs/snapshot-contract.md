@@ -17,7 +17,7 @@ export type LimitsState = "known" | "stale" | "unknown" | "off";
 
 export interface LimitWindow {
   kind: "5h" | "week" | "weekModel" | "other";
-  label: string;              // e.g. "5h", "týden", "týden · gpt-6", "okno 120 min"
+  label: string;              // e.g. "5h", "týden", "Fable" (Claude weekModel), "týden · gpt-6", "okno 120 min"
   percent: number | null;     // 0..100, null when unknown or afterReset
   resetsAt: number | null;    // epoch s
   fetchedAt: number | null;   // epoch s of last successful read
@@ -94,17 +94,66 @@ Tauri commands (shell): `get_snapshot() -> Snapshot`, `get_settings() -> Setting
 `set_widget_transparency(value: u8)`, `refresh_usage()` (read every source now), `open_app()`,
 `clear_history()`, `claude_code_status() / claude_code_connect() / claude_code_disconnect()
 -> ClaudeCodeStatus` (Settings › Claude Code; only the app window), `autostart_status() /
-autostart_set(on: bool) -> AutostartStatus` (Settings › Widget, the system's startup list; only the app window). Event `"snapshot"` carries a full `Snapshot` on every change.
+autostart_set(on: bool) -> AutostartStatus` (Settings › Widget, the system's startup list; only the app window),
+`accounts() -> Accounts` (Settings › Účty; only the app window, never part of the snapshot). Event `"snapshot"` carries a full `Snapshot` on every change.
+
+```ts
+/** The account Claude Code is signed in with (`oauthAccount` in its .claude.json). Raw enum values. */
+export interface ClaudeAccount {
+  email: string | null;
+  name: string | null;
+  organization: string | null;
+  organizationType: string | null;   // "claude_max", "claude_team", …
+  role: string | null;               // "admin", "membership_admin", …
+  seatTier: string | null;
+  rateLimitTier: string | null;      // "default_claude_max_5x", …
+  billing: string | null;            // "stripe_subscription", …
+  accountCreatedAt: number | null;
+  subscriptionCreatedAt: number | null;
+  extraUsage: boolean | null;
+  extraUsageBlocked: string | null;  // "out_of_credits", …
+  profileFetchedAt: number | null;
+  limitsFetchedAt: number | null;
+}
+
+export interface CodexCredits { hasCredits: boolean; unlimited: boolean; balance: string | null }
+
+/** The account the Codex CLI is signed in with (app-server `account/read` + limits and usage reads). */
+export interface CodexAccount {
+  kind: string;                      // "chatgpt" | "apiKey" | "amazonBedrock" | "gcp" | "none"
+  email: string | null;
+  plan: string | null;               // ChatGPT planType
+  workspace: string | null;
+  cliVersion: string | null;
+  resetCredits: number | null;
+  credits: CodexCredits | null;
+  lifetimeTokens: number | null;
+  readAt: number;
+}
+
+export interface Accounts {
+  claude: ClaudeAccount | null;
+  codex: CodexAccount | null;
+  codexNote: string | null;          // why there is no Codex account
+}
+```
 
 Mood priority (core computes, UI only renders): confused(Unknown) > dozing(Stale) >
 panic(≥95, leave <90) > sweat(≥75, leave <70) > celebrate(4 s) > focus(activity in
 last 5 min) > sleep(30 min without activity, only if an activity signal exists) > calm.
 Limits `off`: never confused/dozing; mood from score + activity only.
 
-Claude limits come from two passive sources, never from Claude login data; the newest
-reading wins: Claude Code's status line (`rate_limits`, recorded by `skylimit statusline`
+Claude limits come from three passive sources, never from Claude login data; the newest
+reading wins: the limits Claude Code caches for itself in `~/.claude.json`
+(`cachedUsageUtilization`, only while it belongs to the signed-in `oauthAccount`),
+Claude Code's status line (`rate_limits`, recorded by `skylimit statusline`
 in `<data>/claude-code/` once connected) and T3 Code's provider logs
-(`~/.t3/userdata/logs/provider`, `rate_limit_event` of the Claude Agent SDK). Known until
+(`~/.t3/userdata/logs/provider`, `rate_limit_event` of the Claude Agent SDK).
+The weekly Fable limit is a third Claude window, `kind: "weekModel"`, `label: "Fable"`,
+after the week window: from the cache's `limits[]` entry `weekly_scoped` with model
+"Fable", or the SDK's `seven_day_overage_included` window. It keeps its own reading
+time, never counts toward `governing`, and only Fable work (model containing "fable"
+in the JSONL) makes it Stale or AfterReset; it is absent when no source reports one. Known until
 Claude work appears in the JSONL more than 15 min after the reading (Stale); after
 `resetsAt`: Known 0 % without work since the reset (5h: `resetsAt` null, starts with the
 next message), AfterReset otherwise. Neither source present: `off`; a source without a

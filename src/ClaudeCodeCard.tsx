@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 
 import { claudeCodeStatus, connectClaudeCode, disconnectClaudeCode } from "./api";
+import { Group, Row } from "./controls";
 import { formatAgo } from "./format";
 import type { ClaudeCodeStatus } from "./types";
 
@@ -45,23 +46,21 @@ export function ClaudeCodeCard() {
   };
 
   return (
-    <section className="card settings-card" aria-labelledby="claude-code-title">
-      <h2 id="claude-code-title">Claude Code v terminálu</h2>
-      <p className="hint">
-        Limity Claude z Claude Code v iTermu2, Terminálu nebo jiném terminálu. Skylimit se stane jeho stavovým řádkem a po
-        každé odpovědi si z něj vezme jen procenta limitů.
-      </p>
+    <Group
+      title="Claude Code v terminálu"
+      footer="Limity Claude z Claude Code v iTermu2, Terminálu nebo jiném terminálu, i když zrovna neběží v T3 Code. Skylimit se stane jeho stavovým řádkem a po každé odpovědi si z něj vezme jen procenta limitů."
+    >
       {status === null ? (
-        !error && <p className="hint">Zjišťuji, jestli je Claude Code připojený…</p>
+        !error && <Row title="Zjišťuji, jestli je Claude Code připojený…" />
       ) : (
         <Body status={status} busy={busy} onConnect={() => void act(connectClaudeCode)} onDisconnect={() => void act(disconnectClaudeCode)} />
       )}
       {error && (
-        <p className="hint err-text" role="alert">
+        <p className="row-note err-text" role="alert">
           {error}
         </p>
       )}
-    </section>
+    </Group>
   );
 }
 
@@ -77,7 +76,7 @@ function Body({
   onDisconnect: () => void;
 }) {
   if (status.state === "missing") {
-    return <p className="hint">Claude Code tu není. Až ho nainstaluješ a jednou spustíš, půjde ho tady připojit.</p>;
+    return <Row title="Claude Code tu není" desc="Až ho nainstaluješ a jednou spustíš, půjde ho tady připojit." />;
   }
   const connected = status.state === "on";
   let line: string;
@@ -88,35 +87,40 @@ function Body({
 
   return (
     <>
-      <p className="claude-code-state" role="status">
-        <i className={`dot ${connected ? "dot-on" : "dot-off"}`} aria-hidden="true" />
-        {line}
-      </p>
-      <p className="hint">
-        {status.ownStatusLine
-          ? "Tvůj vlastní stavový řádek poběží dál, Skylimit ho jen spustí za sebe."
-          : `Claude Code ${connected ? "ukazuje" : "pak ukáže"} dole v terminálu řádek s limity, třeba ☀ Claude 5h 24 % · týden 41 %.`}{" "}
-        Mění se jen klíč statusLine v <span className="key">{status.settingsPath}</span>, Odpojit vrátí původní stav.
-      </p>
-      {status.problem && <p className="hint err-text">{status.problem}</p>}
-      <div className="confirm">
+      <Row
+        title={
+          <span className="state-line" role="status">
+            <i className={`dot ${connected ? "dot-on" : "dot-off"}`} aria-hidden="true" />
+            {line}
+          </span>
+        }
+        desc={
+          <>
+            {status.ownStatusLine
+              ? "Tvůj vlastní stavový řádek poběží dál, Skylimit ho jen spustí za sebe."
+              : `Claude Code ${connected ? "ukazuje" : "pak ukáže"} dole v terminálu řádek s limity, třeba ☀ Claude 5h 24 % · týden 41 %.`}{" "}
+            Mění se jen klíč statusLine v <span className="key">{status.settingsPath}</span>, Odpojit vrátí původní stav.
+          </>
+        }
+      >
         {connected ? (
           <button type="button" className="btn" disabled={busy} onClick={onDisconnect}>
             Odpojit
           </button>
         ) : (
           <>
-            <button type="button" className="btn primary" disabled={busy || status.problem !== ""} onClick={onConnect}>
-              {status.state === "moved" ? "Připojit znovu" : "Připojit"}
-            </button>
             {status.state === "moved" && (
               <button type="button" className="btn" disabled={busy} onClick={onDisconnect}>
                 Odpojit
               </button>
             )}
+            <button type="button" className="btn primary" disabled={busy || status.problem !== ""} onClick={onConnect}>
+              {status.state === "moved" ? "Připojit znovu" : "Připojit"}
+            </button>
           </>
         )}
-      </div>
+      </Row>
+      {status.problem && <p className="row-note err-text">{status.problem}</p>}
     </>
   );
 }

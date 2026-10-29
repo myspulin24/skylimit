@@ -32,6 +32,11 @@
   --warn-ink: #f3c879;
 
   --focus-ring: #8fb8ff;
+  /* switches, sliders and focused fields */
+  --accent: #5b8def;
+  --accent-ring: rgba(91, 141, 239, 0.32);
+  /* one height for every field, select, button and segmented control */
+  --control-h: 30px;
   --radius-s: 6px;
   --radius-m: 10px;
   --radius-l: 14px;
@@ -69,8 +74,12 @@ select {
   color: inherit;
 }
 
+/* Our own look on every platform: WebKit on macOS otherwise keeps parts of
+   the native button chrome (height, insets). */
 button {
   cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 :focus-visible {

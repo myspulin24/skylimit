@@ -88,6 +88,15 @@ function handle(msg) {
     case "account/usage/read":
       send({ id: msg.id, result: usage });
       break;
+    case "account/read":
+      send({
+        id: msg.id,
+        result: {
+          account: { type: "chatgpt", email: "tester@example.com", planType: "team", workspaceName: "Test" },
+          requiresOpenaiAuth: true,
+        },
+      });
+      break;
     default:
       if (msg.id != null) send({ id: msg.id, error: { code: -32601, message: "method not found" } });
   }

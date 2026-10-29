@@ -3,7 +3,7 @@
 //! which must not happen in a synchronous command on Windows.
 
 use tauri::{AppHandle, Manager, State};
-use usage_core::{Settings, Snapshot};
+use usage_core::{Accounts, Provider, Settings, Snapshot};
 
 use crate::shell::{self, Shell};
 use crate::windows;
@@ -49,6 +49,29 @@ pub async fn open_feedback(app: AppHandle) -> Result<(), String> {
 #[tauri::command]
 pub async fn open_app(app: AppHandle) -> Result<(), String> {
     windows::open_app(&app).map_err(|e| format!("Okno aplikace se nepodařilo otevřít: {e}"))
+}
+
+/// Settings › Účty: the Claude account from Claude Code's `.claude.json`
+/// (read now, on the blocking pool) and the Codex account the core got from
+/// the app-server. Never part of the snapshot, so the e-mails stay here.
+#[tauri::command]
+pub async fn accounts(app: AppHandle) -> Result<Accounts, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let shell = app.state::<Shell>();
+        let core = shell.core()?;
+        let codex = core.codex_account();
+        let codex_note = match &codex {
+            Some(_) => None,
+            None => core.snapshot().limits_for(Provider::Codex).and_then(|l| l.note.clone()),
+        };
+        Ok(Accounts {
+            claude: usage_core::claude_config::account(&shell.paths.claude_global),
+            codex,
+            codex_note,
+        })
+    })
+    .await
+    .map_err(|e| format!("Účty se nepodařilo načíst: {e}"))?
 }
 
 /// Blocks until the core has emptied the tables (up to 10 s), so it runs on

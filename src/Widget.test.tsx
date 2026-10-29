@@ -59,6 +59,31 @@ describe("Widget", () => {
     expect(within(week).getByText("34 %")).toBeInTheDocument();
   });
 
+  it("Claude's weekly Fable limit sits right under the weekly row, Codex's model limits do not show", async () => {
+    const now = nowSec();
+    const s = fixtures.normal(now);
+    s.limits[1]!.windows.push({ kind: "weekModel", label: "týden · gpt-6-spark", percent: 50, resetsAt: now + 3600, fetchedAt: now, state: "known" });
+    await renderWidget(s);
+    const fable = rowOf(screen.getByText("Fable"));
+    expect(fable).toHaveClass("is-nested");
+    expect(within(fable).getByText("9 %")).toBeInTheDocument();
+    // Same reset as the weekly row: no second countdown.
+    expect(fable.querySelector(".limit-sub")).toBeNull();
+    expect(fable.previousElementSibling).toBe(rowOf(screen.getByText("Claude · týden")));
+    expect(screen.queryByText(/gpt-6-spark/)).not.toBeInTheDocument();
+  });
+
+  it("a stale Fable reading says how old it is", async () => {
+    const now = nowSec();
+    const s = fixtures.normal(now);
+    s.limits[0]!.windows[2] = { kind: "weekModel", label: "Fable", percent: 61, resetsAt: now + 2 * 86_400, fetchedAt: now - 2 * 3600, state: "stale" };
+    await renderWidget(s);
+    const fable = rowOf(screen.getByText("Fable"));
+    expect(within(fable).getByText("~61 %")).toBeInTheDocument();
+    expect(within(fable).getByText("poslední známá · před 2 h")).toBeInTheDocument();
+    expect(fable.querySelector(".bar")).toHaveClass("bar--hatched");
+  });
+
   it("Claude 5h window after a quiet reset: 0 % until the next message", async () => {
     const s = fixtures.normal(nowSec());
     s.limits[0]!.windows[0] = { kind: "5h", label: "5h", percent: 0, resetsAt: null, fetchedAt: nowSec() - 7200, state: "known" };

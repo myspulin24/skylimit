@@ -119,7 +119,7 @@ const LIMIT_STATES: { value: string; sub: string; tone: string; title: string; t
     sub: "limity Claude: připoj Claude Code v Nastavení",
     tone: "off",
     title: "Bez zdroje",
-    text: "Claude Code není připojený a T3 Code tu není, takže limity Claude nejde zjistit. Postavička pak reaguje jen na skóre a aktivitu.",
+    text: "Claude Code limity nehlásí (není přihlášený ani připojený) a T3 Code tu není, takže limity Claude nejde zjistit. Postavička pak reaguje jen na skóre a aktivitu.",
   },
 ];
 
@@ -130,7 +130,11 @@ const SOURCES: { title: string; text: string }[] = [
   },
   {
     title: "Limity Claude",
-    text: "Dva zdroje, platí novější číslo. Claude Code v terminálu (iTerm2, Terminál…) je předává svému stavovému řádku po každé odpovědi, stačí ho připojit v Nastavení. T3 Code si zapisuje události limitů z oficiálního Claude Agent SDK do svých logů (~/.t3/userdata/logs/provider). Přihlašovací token Claude aplikace nikdy nečte. Claude Desktop limity nehlásí, proto číslo po práci v něm zešedne na ~.",
+    text: "Tři zdroje, platí novější číslo. Claude Code si limity sám načítá zhruba každých 10 minut a ukládá do ~/.claude.json. Claude Code v terminálu (iTerm2, Terminál…) je navíc předává svému stavovému řádku po každé odpovědi, stačí ho připojit v Nastavení. T3 Code si zapisuje události limitů z oficiálního Claude Agent SDK do svých logů (~/.t3/userdata/logs/provider). Přihlašovací token Claude aplikace nikdy nečte. Claude Desktop limity nehlásí, proto číslo po práci v něm zešedne na ~.",
+  },
+  {
+    title: "Limit Fable",
+    text: "Menší řádek pod týdnem Claude: týdenní limit jen pro Fable, pokud ho tvůj tarif má. Bere se ze stejné mezipaměti Claude Code a zešedne jen po práci s Fable, ne s jinými modely.",
   },
   {
     title: "Skóre Claude",

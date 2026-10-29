@@ -46,6 +46,10 @@ pub struct DataPaths {
     pub claude_config: PathBuf,
     /// Usually `%USERPROFILE%\.claude\projects`.
     pub claude_projects: PathBuf,
+    /// Claude Code's global config `.claude.json`: the signed-in account and
+    /// the limits Claude Code caches (in the home folder, or in
+    /// `CLAUDE_CONFIG_DIR` when set).
+    pub claude_global: PathBuf,
     /// T3 Code's provider logs, one source of Claude's limits
     /// (`%USERPROFILE%\.t3\userdata\logs\provider`).
     pub t3_logs: PathBuf,
@@ -83,10 +87,12 @@ impl DataPaths {
     }
 
     fn with(root: PathBuf, home: &Path) -> Self {
-        let claude_config = env_dir("CLAUDE_CONFIG_DIR").unwrap_or_else(|| home.join(".claude"));
+        let config_dir = env_dir("CLAUDE_CONFIG_DIR");
+        let claude_config = config_dir.clone().unwrap_or_else(|| home.join(".claude"));
         DataPaths {
             root,
             claude_projects: claude_config.join("projects"),
+            claude_global: usage_core::claude_config::path(config_dir.as_deref(), home),
             claude_config,
             t3_logs: home.join(".t3").join("userdata").join("logs").join("provider"),
         }

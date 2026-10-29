@@ -17,6 +17,7 @@ const COMMANDS: &[&str] = &[
     "open_app",
     "open_feedback",
     "clear_history",
+    "accounts",
     "claude_code_status",
     "claude_code_connect",
     "claude_code_disconnect",
