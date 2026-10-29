@@ -33,7 +33,7 @@ k limitu, začnou se potit, po milníku slaví a v noci spí.
 | | |
 | --- | --- |
 | **Platformy** | Windows 10/11, macOS 11+, Linux |
-| **Data** | Jen lokální: záznamy Claude Code, Codex CLI, logy T3 Code; historie v SQLite |
+| **Data** | Jen lokální: záznamy a stavový řádek Claude Code, Codex CLI, logy T3 Code; historie v SQLite |
 | **Technologie** | Tauri 2, Rust, React 19, TypeScript, SQLite |
 | **Jazyk rozhraní** | čeština |
 | **Licence** | MIT |
@@ -74,9 +74,9 @@ Historie i nastavení zůstanou. Na Linuxu se aktualizuje AppImage, balíček
 
 | Nástroj | K čemu | Bez něj |
 | --- | --- | --- |
-| [Claude Code](https://code.claude.com) | Skóre Claude ze záznamů v `~/.claude/projects` | Skóre Claude zůstane prázdné |
+| [Claude Code](https://code.claude.com) | Skóre Claude ze záznamů v `~/.claude/projects`; po připojení i limity Claude ze stavového řádku | Skóre Claude zůstane prázdné |
 | [Codex CLI](https://github.com/openai/codex), přihlášený | Limity a spotřeba Codexu přes `codex app-server` | Řádky Codexu ukážou „Codex CLI nenalezen“ |
-| [T3 Code](https://github.com/pingdotgg/t3code) (volitelně) | Limity Claude z jeho logů | Místo limitů Claude stojí „limity Claude jen přes T3 Code“ |
+| [T3 Code](https://github.com/pingdotgg/t3code) (volitelně) | Limity Claude z jeho logů | Bez T3 Code i bez připojeného Claude Code stojí místo limitů Claude „připoj Claude Code v Nastavení“ |
 
 ---
 
@@ -141,7 +141,7 @@ Snímky v tomto README ukazují smyšlená demo data.
 | --- | --- | --- |
 | Limity Codexu | Oficiální `codex app-server` (JSON-RPC, `account/rateLimits/read`) | Každé 2 minuty a po každé změně |
 | Spotřeba Codexu | `account/usage/read`: denní součty tokenů | Každých 5 minut |
-| Limity Claude | Události `rate_limit_event`, které Claude Agent SDK předává T3 Code a ten je zapisuje do `~/.t3/userdata/logs/provider` | Při práci v T3 Code, kontrola každých 10 s |
+| Limity Claude | `rate_limits`, které Claude Code předává svému [stavovému řádku](https://code.claude.com/docs/en/statusline) (po připojení v Nastavení), a události `rate_limit_event`, které Claude Agent SDK předává T3 Code a ten je zapisuje do `~/.t3/userdata/logs/provider`. Platí novější číslo | Po každé odpovědi v Claude Code nebo T3 Code, kontrola každých 5 s |
 | Skóre Claude | Záznamy Claude Code (`~/.claude/projects/**/*.jsonl`) × ceník API (snímek [LiteLLM](https://github.com/BerriAI/litellm)) | Hned po změně souboru |
 | Kurz | Denní kurz [ČNB](https://www.cnb.cz) | Jednou denně |
 
@@ -150,10 +150,32 @@ podle modelu, takže se násobí průměrnou sazbou. Ve widgetu je proto označe
 značkou „odhad“ a dá se vypnout v nastavení.
 
 **Proč ne přímo z účtu Claude:** podmínky Anthropicu nedovolují aplikacím
-třetích stran používat přihlašovací token Claude. Skylimit proto čte jen to,
-co už leží na disku. Práci v terminálu nebo v Claude Desktop do logů T3 Code
-nikdo nezapíše; když se Claude po posledním záznamu použije jinde, ukáže
-widget číslo s vlnovkou jako „poslední známé“.
+třetích stran používat přihlašovací token Claude. Skylimit proto bere jen to,
+co mu Claude Code a T3 Code samy předají. Claude Desktop limity nehlásí;
+když se Claude po posledním hlášení použije tam, ukáže widget číslo s
+vlnovkou jako „poslední známé“.
+
+### Claude Code v terminálu
+
+Limity Claude z Claude Code v iTermu2, Terminálu, Windows Terminalu nebo
+terminálu v editoru se zapínají v **Nastavení › Claude Code v terminálu ›
+Připojit**. Skylimit se tím stane [stavovým řádkem](https://code.claude.com/docs/en/statusline)
+Claude Code: do `~/.claude/settings.json` zapíše jen klíč `statusLine` s
+příkazem `skylimit statusline` a předtím si uschová kopii souboru. Claude
+Code pak Skylimit spustí po každé odpovědi a předá mu procenta 5h a
+týdenního limitu.
+
+- Kdo už svůj stavový řádek má, o něj nepřijde: Skylimit ho spustí se stejným
+  vstupem a ukáže jeho výstup. Jinak ukáže řádek `☀ Claude 5h 24 % · týden 41 %`.
+- **Odpojit** vrátí původní `statusLine`. Před odinstalováním Skylimitu je
+  dobré Claude Code odpojit, jinak stavový řádek zůstane prázdný.
+- Limity Claude Code hlásí jen předplatitelům Pro a Max. Projekt s vlastním
+  `statusLine` v `.claude/settings.json` má přednost a z něj limity nepřijdou.
+- S vlastním stavovým řádkem Claude Code skrývá dole nápovědu klávesových
+  zkratek (například `esc to interrupt`); tak to má Claude Code u každého
+  stavového řádku.
+- Na macOS musí Skylimit běžet ze složky Aplikace, jinak by se Claude Code
+  odkazoval na dočasné umístění.
 
 ---
 
@@ -223,7 +245,9 @@ src/                     Rozhraní (React): widget, okno aplikace, dialogy
 crates/usage-core/       Jádro bez Tauri: zdroje dat, ceník, skóre, nálady, SQLite
   src/claude.rs            záznamy Claude Code (JSONL)
   src/codex.rs             codex app-server (JSON-RPC)
-  src/t3.rs                limity Claude z logů T3 Code
+  src/claude_limits.rs     limity Claude: novější ze dvou zdrojů
+  src/claude_code.rs       limity ze stavového řádku Claude Code
+  src/t3.rs                limity z logů T3 Code
 src-tauri/               Shell: okna, ikona v oznamovací oblasti, příkazy, zpětná vazba
 feedback/                Cloudflare Worker, který ze zpětné vazby zakládá issue
 docs/snapshot-contract.md  Smlouva mezi jádrem a rozhraním
@@ -245,7 +269,11 @@ Skylimit jen čte, co vrátí.
 
 Přihlašovací údaje se nečtou nikdy: ani `~/.claude/.credentials.json`, ani
 `~/.codex/auth.json`. Z logů T3 Code, ve kterých jsou celé konverzace, se
-berou jen čísla limitů.
+berou jen čísla limitů. Ze vstupu stavového řádku Claude Code si Skylimit
+nechá jen procenta limitů, čas resetu, identifikátor relace a počítadla, podle
+kterých pozná novou odpověď. Pracovní složku, model ani cestu k přepisu
+neukládá. Do `~/.claude/settings.json` zapisuje jen po kliknutí na
+**Připojit** nebo **Odpojit** a jen klíč `statusLine`.
 
 | Funkce | Co odchází | Kdy |
 | --- | --- | --- |
@@ -264,7 +292,7 @@ Každé okno smí jen své příkazy (systémem vynucený seznam v
 | Okno | Smí |
 | --- | --- |
 | Widget | Číst snímek, otevřít okno aplikace, vyžádat obnovení dat, přetahovat se |
-| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu |
+| Aplikace | Navíc měnit nastavení, průhlednost a průchod kliknutí, smazat historii, poslat zpětnou vazbu, připojit a odpojit Claude Code |
 
 ---
 

@@ -1,6 +1,6 @@
 [package]
 name = "skylimit"
-version = "0.6.0"
+version = "0.7.0"
 description = "Skylimit – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
 edition.workspace = true
 license.workspace = true
@@ -19,7 +19,9 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 usage-core.workspace = true
 serde.workspace = true
-serde_json.workspace = true
+# preserve_order: Claude Code's settings.json keeps its key order when
+# Skylimit adds or removes its status line.
+serde_json = { workspace = true, features = ["preserve_order"] }
 # macos-private-api: a transparent window on macOS needs it (the widget).
 tauri = { version = "2", features = ["tray-icon", "macos-private-api"] }
 tauri-plugin-single-instance = "2"
@@ -30,7 +32,10 @@ rustls.workspace = true
 tauri-plugin-updater = "2"
 
 [target.'cfg(windows)'.dependencies]
-windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { workspace = true, features = ["Win32_Foundation", "Win32_UI_WindowsAndMessaging", "Win32_Storage_FileSystem"] }
+
+[dev-dependencies]
+tempfile.workspace = true
 
 [features]
 # Enabled by `tauri build`: the frontend is served from the bundle, not devUrl.

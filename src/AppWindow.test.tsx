@@ -20,6 +20,9 @@ vi.mock("./api", () => ({
   feedbackStatus: vi.fn(() => new Promise(() => {})),
   sendFeedback: vi.fn(),
   onOpenFeedback: vi.fn(() => () => {}),
+  claudeCodeStatus: vi.fn(() => Promise.resolve({ state: "off", settingsPath: "~/.claude/settings.json", ownStatusLine: false, lastReadingAt: null, problem: "" })),
+  connectClaudeCode: vi.fn(),
+  disconnectClaudeCode: vi.fn(),
 }));
 
 import * as api from "./api";
@@ -106,7 +109,8 @@ describe("AppWindow · Stavy", () => {
     expect(within(items[6] as HTMLElement).getByText("30 minut bez práce.")).toBeInTheDocument();
 
     expect(screen.getByRole("heading", { name: "Řádky limitů" })).toBeInTheDocument();
-    expect(screen.getByText(/T3 Code zapisuje do svých logů/)).toBeInTheDocument();
+    expect(screen.getByText(/T3 Code si zapisuje události limitů/)).toBeInTheDocument();
+    expect(screen.getByText(/Claude Code v terminálu \(iTerm2, Terminál…\)/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Ikona v oznamovací oblasti" })).toBeInTheDocument();
   });
 

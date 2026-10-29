@@ -66,6 +66,7 @@ impl Env {
         Config {
             claude_projects_dir: self.projects.clone(),
             t3_logs_dir: None,
+            claude_code_dir: None,
             db_path: self.tmp.path().join("skylimit-data").join("history.sqlite"),
             diag_dir: self.tmp.path().join("diag"),
             codex,
@@ -576,7 +577,63 @@ fn refresh_reads_codex_and_t3_code_now() {
     wait_for(&h, &env, "claude 55 % after refresh", |s| {
         s.limits_for(Provider::Claude).and_then(|l| l.governing) == Some(55.0)
     });
-    // The T3 Code reader polls every 10 s; the refresh woke it well before that.
-    assert!(asked.elapsed() < Duration::from_secs(5), "refresh took {:?}", asked.elapsed());
+    // The Claude limits reader polls every 5 s; the refresh woke it before that.
+    assert!(asked.elapsed() < Duration::from_secs(4), "refresh took {:?}", asked.elapsed());
+    h.shutdown();
+}
+
+/// What Claude Code hands its status line command (trimmed to what matters).
+fn status_line_input(session: &str, api_ms: u64, five: f64, week: f64) -> String {
+    format!(
+        r#"{{"session_id":"{session}","cwd":"/Users/someone/project","cost":{{"total_api_duration_ms":{api_ms}}},"rate_limits":{{"five_hour":{{"used_percentage":{five},"resets_at":{RESET_5H}}},"seven_day":{{"used_percentage":{week},"resets_at":{RESET_WEEK}}}}}}}"#
+    )
+}
+
+#[test]
+fn claude_limits_come_from_the_claude_code_status_line_and_the_newest_source_wins() {
+    let env = Env::new();
+    let t3 = env.tmp.path().join("t3");
+    fs::create_dir_all(&t3).unwrap();
+    let log = t3.join("events.thread-1.log");
+    fs::write(&log, format!("{}\n", t3_event("2026-10-28T12:10:00Z", 0.10, 0.10, RESET_5H, RESET_WEEK))).unwrap();
+    let code = env.tmp.path().join("skylimit-data").join(claude_code::DIR_NAME);
+    let mut config = env.config(CodexSource::Disabled);
+    config.t3_logs_dir = Some(t3);
+    config.claude_code_dir = Some(code.clone());
+    let h = Core::start(config);
+    wait_for(&h, &env, "claude 10 % from T3 Code", |s| {
+        s.limits_for(Provider::Claude).and_then(|l| l.governing) == Some(10.0)
+    });
+
+    // `skylimit statusline` as Claude Code runs it: the first run of a
+    // session only remembers it, the run after the next response counts.
+    let run = |api_ms, five, week| {
+        let sample = claude_code::parse(&status_line_input("sess-1", api_ms, five, week)).unwrap();
+        claude_code::record(&code, &sample, env.now()).unwrap()
+    };
+    assert!(!run(100, 50.0, 20.0).fresh);
+    assert!(run(900, 63.0, 21.0).fresh);
+    h.refresh();
+    let s = wait_for(&h, &env, "claude 63 % from Claude Code", |s| {
+        s.limits_for(Provider::Claude).and_then(|l| l.governing) == Some(63.0)
+    });
+    let claude = s.limits_for(Provider::Claude).unwrap();
+    assert_eq!(claude.state, LimitsState::Known);
+    assert_eq!(claude.windows[0].fetched_at, Some(env.now()), "newer than T3 Code's reading");
+    assert_eq!(claude.windows[1].percent, Some(21.0));
+    h.shutdown();
+}
+
+#[test]
+fn without_t3_code_or_claude_code_the_note_points_to_settings() {
+    let env = Env::new();
+    let mut config = env.config(CodexSource::Disabled);
+    config.t3_logs_dir = Some(env.tmp.path().join("no-t3"));
+    config.claude_code_dir = Some(env.tmp.path().join("not-connected"));
+    let h = Core::start(config);
+    let s = wait_for(&h, &env, "claude limits off", |s| {
+        s.limits_for(Provider::Claude).is_some_and(|l| l.state == LimitsState::Off)
+    });
+    assert_eq!(s.limits_for(Provider::Claude).unwrap().note.as_deref(), Some(CLAUDE_LIMITS_NOTE));
     h.shutdown();
 }

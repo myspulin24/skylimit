@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-claude-code-disconnect"
+description = "Enables the claude_code_disconnect command without any pre-configured scope."
+commands.allow = ["claude_code_disconnect"]
+
+[[permission]]
+identifier = "deny-claude-code-disconnect"
+description = "Denies the claude_code_disconnect command without any pre-configured scope."
+commands.deny = ["claude_code_disconnect"]

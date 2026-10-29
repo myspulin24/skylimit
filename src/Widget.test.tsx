@@ -68,9 +68,9 @@ describe("Widget", () => {
     expect(within(row).getByText("začne první zprávou")).toBeInTheDocument();
   });
 
-  it("without T3 Code: one muted line with the reason instead of rows", async () => {
+  it("without a Claude limits source: one muted line with the reason instead of rows", async () => {
     await renderWidget(fixtures.claudeOff(nowSec()));
-    expect(screen.getByText("limity Claude jen přes T3 Code (nenalezen)")).toBeInTheDocument();
+    expect(screen.getByText("limity Claude: připoj Claude Code v Nastavení")).toBeInTheDocument();
     expect(screen.queryByText(/Claude · 5h/)).not.toBeInTheDocument();
   });
 

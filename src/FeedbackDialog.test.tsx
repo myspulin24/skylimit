@@ -20,6 +20,9 @@ vi.mock("./api", () => ({
   feedbackStatus: vi.fn(),
   sendFeedback: vi.fn(),
   onOpenFeedback: vi.fn(() => () => {}),
+  claudeCodeStatus: vi.fn(() => Promise.resolve({ state: "off", settingsPath: "~/.claude/settings.json", ownStatusLine: false, lastReadingAt: null, problem: "" })),
+  connectClaudeCode: vi.fn(),
+  disconnectClaudeCode: vi.fn(),
 }));
 
 import * as api from "./api";

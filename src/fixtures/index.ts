@@ -27,7 +27,7 @@ export const FIXTURE_LABEL: Record<FixtureName, string> = {
   backfill: "načítání historie",
   celebration: "oslava",
   panic: "panika",
-  claudeOff: "bez T3 Code",
+  claudeOff: "bez zdroje limitů Claude",
 };
 
 export function isFixtureName(value: string | null): value is FixtureName {
@@ -157,7 +157,7 @@ function normal(now: number): Snapshot {
 }
 
 /** Codex app-server stopped answering: 5h window stale, week window past its reset.
- *  Claude ran in the terminal after T3 Code's last reading: its number is stale too. */
+ *  Claude ran where no source reports limits (Claude Desktop): its number is stale too. */
 function stale(now: number): Snapshot {
   const s = normal(now);
   s.limits[0] = {
@@ -168,7 +168,7 @@ function stale(now: number): Snapshot {
       { kind: "5h", label: "5h", percent: 22, resetsAt: now + 2 * HOUR, fetchedAt: now - 52 * MIN, state: "stale" },
       { kind: "week", label: "týden", percent: 34, resetsAt: now + 5 * DAY, fetchedAt: now - 52 * MIN, state: "stale" },
     ],
-    note: "Claude od té doby běžel mimo T3 Code",
+    note: "Claude od té doby běžel mimo terminál i T3 Code",
   };
   s.limits[1] = {
     provider: "codex",
@@ -315,10 +315,10 @@ function panic(now: number): Snapshot {
   return s;
 }
 
-/** No T3 Code on this PC: Claude limits have no source, mood from activity only. */
+/** Neither Claude Code connected nor T3 Code: Claude limits have no source, mood from activity only. */
 function claudeOff(now: number): Snapshot {
   const s = normal(now);
-  s.limits[0] = { provider: "claude", state: "off", governing: null, windows: [], note: "limity Claude jen přes T3 Code (nenalezen)" };
+  s.limits[0] = { provider: "claude", state: "off", governing: null, windows: [], note: "limity Claude: připoj Claude Code v Nastavení" };
   return s;
 }
 

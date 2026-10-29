@@ -12,7 +12,7 @@ export type Provider = "claude" | "codex";
 
 /** Freshness of one limit window. */
 export type WindowState = "known" | "stale" | "unknown" | "afterReset";
-/** Governing state of a provider's limits. "off" = no source (Claude without T3 Code, Codex disabled). */
+/** Governing state of a provider's limits. "off" = no source (Claude with neither Claude Code connected nor T3 Code, Codex disabled). */
 export type LimitsState = "known" | "stale" | "unknown" | "off";
 
 export interface LimitWindow {
@@ -29,7 +29,7 @@ export interface ProviderLimits {
   state: LimitsState;
   governing: number | null;   // max percent over 5h + week windows that have a value
   windows: LimitWindow[];
-  note: string | null;        // Czech UI hint, e.g. "Codex CLI nenalezen", "limity Claude jen přes T3 Code (nenalezen)"
+  note: string | null;        // Czech UI hint, e.g. "Codex CLI nenalezen", "limity Claude: připoj Claude Code v Nastavení"
 }
 
 /** "estimate": Codex cost from daily token totals × blended rate. */
@@ -92,15 +92,19 @@ export interface Settings {
 Tauri commands (shell): `get_snapshot() -> Snapshot`, `get_settings() -> Settings`,
 `set_settings(settings: Settings)`, `set_click_through(on: bool)`,
 `set_widget_transparency(value: u8)`, `refresh_usage()` (read every source now), `open_app()`,
-`clear_history()`. Event `"snapshot"` carries a full `Snapshot` on every change.
+`clear_history()`, `claude_code_status() / claude_code_connect() / claude_code_disconnect()
+-> ClaudeCodeStatus` (Settings › Claude Code; only the app window). Event `"snapshot"` carries a full `Snapshot` on every change.
 
 Mood priority (core computes, UI only renders): confused(Unknown) > dozing(Stale) >
 panic(≥95, leave <90) > sweat(≥75, leave <70) > celebrate(4 s) > focus(activity in
 last 5 min) > sleep(30 min without activity, only if an activity signal exists) > calm.
 Limits `off`: never confused/dozing; mood from score + activity only.
 
-Claude limits come from T3 Code's provider logs (`~/.t3/userdata/logs/provider`,
-`rate_limit_event` of the Claude Agent SDK), never from Claude login data. Known until
+Claude limits come from two passive sources, never from Claude login data; the newest
+reading wins: Claude Code's status line (`rate_limits`, recorded by `skylimit statusline`
+in `<data>/claude-code/` once connected) and T3 Code's provider logs
+(`~/.t3/userdata/logs/provider`, `rate_limit_event` of the Claude Agent SDK). Known until
 Claude work appears in the JSONL more than 15 min after the reading (Stale); after
 `resetsAt`: Known 0 % without work since the reset (5h: `resetsAt` null, starts with the
-next message), AfterReset otherwise. No T3 Code folder: `off`; folder without a reading: `unknown`.
+next message), AfterReset otherwise. Neither source present: `off`; a source without a
+reading yet: `unknown`.

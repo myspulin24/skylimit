@@ -58,6 +58,36 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.7.0] — 2026-10-29
+
+### Přidáno
+
+- **Limity Claude z Claude Code v terminálu** (iTerm2, Terminál, Windows
+  Terminal, terminál v editoru). V **Nastavení › Claude Code v terminálu**
+  stačí kliknout na **Připojit**: Skylimit se stane stavovým řádkem Claude
+  Code a po každé odpovědi si vezme procenta 5h a týdenního limitu. Funguje
+  vedle T3 Code, platí novější číslo.
+- **Vlastní stavový řádek zůstane.** Kdo ho v Claude Code už má, o nic
+  nepřijde: Skylimit ho spustí se stejným vstupem a ukáže jeho výstup.
+  **Odpojit** vrátí původní nastavení.
+- **Příkaz `skylimit statusline`**, který Claude Code spouští. Bez vlastního
+  stavového řádku ukáže v terminálu `☀ Claude 5h 24 % · týden 41 %`.
+
+### Změněno
+
+- **Bez zdroje limitů Claude** radí widget „připoj Claude Code v Nastavení“
+  místo „limity Claude jen přes T3 Code“. Záložka Stavy popisuje oba zdroje.
+- **Limity Claude se kontrolují každých 5 s** místo 10 s.
+- **Složka Claude Code se řídí proměnnou `CLAUDE_CONFIG_DIR`**, když je
+  nastavená, pro záznamy ke skóre i pro `settings.json`.
+
+### Zabezpečení
+
+- Do `~/.claude/settings.json` Skylimit zapisuje jen po kliknutí na
+  **Připojit** nebo **Odpojit**, jen klíč `statusLine` a s kopií předchozí
+  verze ve své složce s daty. Ze vstupu stavového řádku si nechá jen čísla
+  limitů; pracovní složku, model ani cestu k přepisu neukládá.
+
 ## [0.6.0] — 2026-10-28
 
 ### Přidáno
@@ -224,7 +254,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.6.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/myspulin24/skylimit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/myspulin24/skylimit/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/myspulin24/skylimit/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/myspulin24/skylimit/releases/tag/v0.4.0

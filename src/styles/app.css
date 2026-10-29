@@ -1373,3 +1373,21 @@ html[data-window="app"] body {
   margin: 4px 0 2px;
   font-size: 13px;
 }
+
+/* Settings › Claude Code v terminálu */
+.claude-code-state {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 2px 0 8px;
+  font-size: 13px;
+  color: var(--ink-1);
+}
+
+.claude-code-state .dot-on {
+  background: var(--ok);
+}
+
+.claude-code-state .dot-off {
+  background: var(--ink-3);
+}

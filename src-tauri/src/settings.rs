@@ -42,9 +42,11 @@ fn data_root(local: &Path) -> PathBuf {
 #[derive(Debug, Clone)]
 pub struct DataPaths {
     pub root: PathBuf,
+    /// Claude Code's folder: `CLAUDE_CONFIG_DIR`, usually `~/.claude`.
+    pub claude_config: PathBuf,
     /// Usually `%USERPROFILE%\.claude\projects`.
     pub claude_projects: PathBuf,
-    /// T3 Code's provider logs, the source of Claude's limits
+    /// T3 Code's provider logs, one source of Claude's limits
     /// (`%USERPROFILE%\.t3\userdata\logs\provider`).
     pub t3_logs: PathBuf,
 }
@@ -57,11 +59,42 @@ impl DataPaths {
         let home = env_dir("USERPROFILE")
             .or_else(|| app.path().home_dir().ok())
             .unwrap_or_else(|| PathBuf::from("."));
+        Self::with(data_root(&local), &home)
+    }
+
+    /// The same folders without a running app: `skylimit statusline`, which
+    /// Claude Code starts after every response. Mirrors Tauri's
+    /// `local_data_dir` and never moves the pre-0.5.0 folder (the app has
+    /// done that before anyone could connect Claude Code).
+    pub fn from_env() -> Self {
+        let home = env_dir("USERPROFILE")
+            .or_else(|| env_dir("HOME"))
+            .unwrap_or_else(|| PathBuf::from("."));
+        let local = env_dir("LOCALAPPDATA").unwrap_or_else(|| {
+            if cfg!(target_os = "macos") {
+                home.join("Library").join("Application Support")
+            } else {
+                env_dir("XDG_DATA_HOME")
+                    .filter(|d| d.is_absolute())
+                    .unwrap_or_else(|| home.join(".local").join("share"))
+            }
+        });
+        Self::with(local.join(DATA_DIR_NAME), &home)
+    }
+
+    fn with(root: PathBuf, home: &Path) -> Self {
+        let claude_config = env_dir("CLAUDE_CONFIG_DIR").unwrap_or_else(|| home.join(".claude"));
         DataPaths {
-            root: data_root(&local),
-            claude_projects: home.join(".claude").join("projects"),
+            root,
+            claude_projects: claude_config.join("projects"),
+            claude_config,
             t3_logs: home.join(".t3").join("userdata").join("logs").join("provider"),
         }
+    }
+
+    /// Claude Code's limits from its status line; exists while connected.
+    pub fn claude_code(&self) -> PathBuf {
+        usage_core::claude_code::session_dir(&self.root)
     }
 
     pub fn db(&self) -> PathBuf {

@@ -5,6 +5,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { clearHistory, getSettings, setClickThrough, setSettings, setWidgetTransparency } from "./api";
+import { ClaudeCodeCard } from "./ClaudeCodeCard";
 import { PROVIDER_NAME, sourceLabel } from "./format";
 import { FeedbackIcon } from "./icons";
 import { UpdateLine } from "./update";
@@ -282,6 +283,8 @@ export function SettingsForm({
             )}
           </fieldset>
         </section>
+
+        <ClaudeCodeCard />
       </div>
 
       <div className="settings-col">

@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
+import type { ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
 
 declare global {
   interface Window {
@@ -151,4 +151,22 @@ export function onSnapshot(cb: (snapshot: Snapshot) => void): () => void {
     unlisten?.();
     unlisten = null;
   };
+}
+
+/** Settings › Claude Code: is Skylimit Claude Code's status line? */
+export async function claudeCodeStatus(): Promise<ClaudeCodeStatus> {
+  if (isTauri()) return invoke<ClaudeCodeStatus>("claude_code_status");
+  return (await mock()).claudeCodeStatus();
+}
+
+/** Adds Skylimit to Claude Code's status line; rejects with a sentence for the user. */
+export async function connectClaudeCode(): Promise<ClaudeCodeStatus> {
+  if (isTauri()) return invoke<ClaudeCodeStatus>("claude_code_connect");
+  return (await mock()).connectClaudeCode();
+}
+
+/** Puts back the status line the user had before. */
+export async function disconnectClaudeCode(): Promise<ClaudeCodeStatus> {
+  if (isTauri()) return invoke<ClaudeCodeStatus>("claude_code_disconnect");
+  return (await mock()).disconnectClaudeCode();
 }

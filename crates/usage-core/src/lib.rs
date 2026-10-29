@@ -7,7 +7,8 @@
 //! ```text
 //!  <projects>/**/*.jsonl ──notify + 30 s poll──▶ claude.rs ─┐
 //!  codex app-server (Job Object) ──JSON-RPC────▶ codex.rs  ─┤ Update
-//!  T3 Code provider logs ──────10 s poll───────▶ t3.rs     ─┤
+//!  T3 Code provider logs ───────5 s poll───────▶ t3.rs     ─┤ claude_limits.rs
+//!  Claude Code status line files ─5 s poll────▶ claude_code.rs ┤
 //!  ČNB daily fixing (≤ 1×/day) ────────────────▶ fx.rs     ─┤
 //!                                                           ▼
 //!             core thread: store.rs ─▶ pricing.rs ─▶ score.rs ─▶ mood.rs
@@ -17,11 +18,14 @@
 //!
 //! Claude limits never touch Claude login data and never call Anthropic
 //! (terms gate): they come from the `rate_limit_event` messages the official
-//! Claude Agent SDK hands to T3 Code, which logs them locally (`t3.rs`).
-//! Without T3 Code they are Off and Claude's mood comes from score and
-//! activity only.
+//! Claude Agent SDK hands to T3 Code, which logs them locally (`t3.rs`), and
+//! from the `rate_limits` Claude Code passes to its status line command
+//! (`claude_code.rs`). Without either they are Off and Claude's mood comes
+//! from score and activity only.
 
 mod claude;
+pub mod claude_code;
+mod claude_limits;
 mod codex;
 mod diag;
 mod fx;
@@ -53,7 +57,7 @@ use crate::fx::FxDay;
 use crate::mood::{Activity, Level, MoodInput};
 use crate::pricing::PriceTable;
 use crate::store::Store;
-use crate::t3::{ClaudeLimitsView, ClaudeReading, ClaudeWindow, T3Thread};
+use crate::claude_limits::{ClaudeLimitsThread, ClaudeLimitsView, ClaudeReading, ClaudeWindow, Sources};
 
 /// Seconds since the Unix epoch. Injectable so tests control time.
 pub type Clock = Arc<dyn Fn() -> i64 + Send + Sync>;
@@ -67,8 +71,8 @@ pub fn system_clock() -> Clock {
     })
 }
 
-/// Note on Claude's limits row when no T3 Code log folder is configured or found.
-pub const CLAUDE_LIMITS_NOTE: &str = t3::NOTE_NO_T3;
+/// Note on Claude's limits row when neither T3 Code nor Claude Code reports them.
+pub const CLAUDE_LIMITS_NOTE: &str = claude_limits::NOTE_OFF;
 
 const TICK: Duration = Duration::from_millis(250);
 /// Recompute at least this often (seconds of the injected clock) so time-based
@@ -127,8 +131,13 @@ pub struct Config {
     /// Usually `%LOCALAPPDATA%\skylimit-data\history.sqlite` (parents are created).
     pub db_path: PathBuf,
     /// T3 Code's provider logs (`%USERPROFILE%\.t3\userdata\logs\provider`),
-    /// the only source of Claude's limits. `None` = Claude limits Off.
+    /// one source of Claude's limits.
     pub t3_logs_dir: Option<PathBuf>,
+    /// Where `skylimit statusline` keeps Claude Code's limits
+    /// (`<data>/claude-code`, see [`claude_code`]); the other source. It
+    /// exists only while Claude Code is connected. Both `None` = Claude
+    /// limits Off.
+    pub claude_code_dir: Option<PathBuf>,
     pub diag_dir: PathBuf,
     pub codex: CodexSource,
     /// Initial settings; persisting them is the shell's job.
@@ -145,6 +154,7 @@ impl Config {
             claude_projects_dir,
             db_path,
             t3_logs_dir: None,
+            claude_code_dir: None,
             diag_dir,
             codex: CodexSource::official(),
             settings: Settings::default(),
@@ -166,7 +176,7 @@ pub(crate) enum Update {
     },
     Codex(CodexEvent),
     ClaudeLimits {
-        dir_exists: bool,
+        sources: Sources,
         reading: Option<ClaudeReading>,
     },
     Fx {
@@ -240,13 +250,14 @@ impl Core {
             .spawn(),
         );
 
-        let (t3_wake, t3_wake_rx) = mpsc::channel();
-        if let Some(dir) = &config.t3_logs_dir {
+        let (claude_limits_wake, wake_rx) = mpsc::channel();
+        if config.t3_logs_dir.is_some() || config.claude_code_dir.is_some() {
             children.push(
-                T3Thread {
-                    dir: dir.clone(),
+                ClaudeLimitsThread {
+                    t3_dir: config.t3_logs_dir.clone(),
+                    code_dir: config.claude_code_dir.clone(),
                     core: tx.clone(),
-                    wake: t3_wake_rx,
+                    wake: wake_rx,
                     stop: stop.clone(),
                     clock: clock.clone(),
                     diag: diag.clone(),
@@ -295,11 +306,15 @@ impl Core {
 
         let mut codex = CodexView::new(codex_disabled);
         restore_codex(&store, &mut codex, now);
-        let t3_dir = config.t3_logs_dir.as_deref();
+        let present = |dir: &Option<PathBuf>| dir.as_deref().is_some_and(|d| d.is_dir());
         let claude_limits = ClaudeLimitsView {
-            configured: t3_dir.is_some(),
-            dir_exists: t3_dir.is_some_and(|d| d.is_dir()),
-            reading: t3_dir.and_then(|_| restore_claude_limits(&store, now)),
+            available: Sources {
+                t3: present(&config.t3_logs_dir),
+                code: present(&config.claude_code_dir),
+            },
+            reading: (config.t3_logs_dir.is_some() || config.claude_code_dir.is_some())
+                .then(|| restore_claude_limits(&store, now))
+                .flatten(),
         };
         let state = CoreState {
             fx: store.latest_fx().unwrap_or_else(FxDay::fallback),
@@ -312,7 +327,7 @@ impl Core {
             settings: settings.clone(),
             claude_tx,
             codex_ctl,
-            t3_wake,
+            claude_limits_wake,
             fx_stop,
             prices_stop,
             children,
@@ -479,7 +494,8 @@ fn restore_codex(store: &Store, codex: &mut CodexView, now: i64) {
     }
 }
 
-/// Last Claude limits reading from the database (T3 Code logs rotate away).
+/// Last Claude limits reading from the database (T3 Code logs rotate away,
+/// Claude Code sessions end).
 fn restore_claude_limits(store: &Store, now: i64) -> Option<ClaudeReading> {
     let rows = store.latest_limit_snapshot("claude");
     let at = rows.first().map(|r| r.ts).filter(|ts| now - ts < LIMIT_HISTORY_DAYS * 86_400)?;
@@ -508,7 +524,8 @@ struct CoreState {
     settings: Arc<Mutex<Settings>>,
     claude_tx: Sender<ClaudeIn>,
     codex_ctl: Option<Sender<CodexCtl>>,
-    t3_wake: Sender<()>,
+    /// Polls T3 Code and Claude Code now (refresh, Claude Code connected).
+    claude_limits_wake: Sender<()>,
     fx_stop: Option<Sender<()>>,
     prices_stop: Option<Sender<()>>,
     children: Vec<JoinHandle<()>>,
@@ -591,7 +608,7 @@ impl CoreState {
             }
             CoreMsg::Refresh => {
                 let _ = self.claude_tx.send(ClaudeIn::PollNow);
-                let _ = self.t3_wake.send(());
+                let _ = self.claude_limits_wake.send(());
                 if let Some(ctl) = &self.codex_ctl {
                     let _ = ctl.send(CodexCtl::RefreshNow);
                 }
@@ -684,8 +701,8 @@ impl CoreState {
                 self.codex.apply(&ev);
                 self.dirty = true;
             }
-            Update::ClaudeLimits { dir_exists, reading } => {
-                self.claude_limits.dir_exists = dir_exists;
+            Update::ClaudeLimits { sources, reading } => {
+                self.claude_limits.available = sources;
                 if let Some(r) = reading {
                     if self.claude_limits.reading.as_ref().is_none_or(|old| r.at > old.at) {
                         for (win, w) in [("5h", &r.five_hour), ("week", &r.seven_day)] {
@@ -1033,7 +1050,7 @@ mod tests {
             })),
             claude_tx,
             codex_ctl: None,
-            t3_wake: mpsc::channel().0,
+            claude_limits_wake: mpsc::channel().0,
             fx_stop: None,
             prices_stop: None,
             children: Vec::new(),

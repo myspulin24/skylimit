@@ -359,7 +359,7 @@ function Celebration({ celebration }: { celebration: Snapshot["celebration"] }) 
  *  within a few seconds as snapshots (the core keeps a 10 s gap per source). */
 export const REFRESH_SPIN_MS = 1500;
 
-/** "Obnovit": asks the core to read Codex, the Claude logs and T3 Code now. */
+/** "Obnovit": asks the core to read Codex, the Claude logs, Claude Code and T3 Code now. */
 function RefreshButton() {
   const [busy, setBusy] = useState(false);
 

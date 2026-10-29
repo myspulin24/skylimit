@@ -13,7 +13,7 @@ import {
   type FixtureName,
 } from "./fixtures";
 import { PROVIDER_NAME } from "./format";
-import type { FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
+import type { ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
 
 const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -215,4 +215,29 @@ if (fixtureName === "celebration" && typeof window !== "undefined") {
     base = { ...base, celebration: { id: `multiple-5-${Date.now()}`, who: "both", text: "Tento měsíc už 5× paušálu!" } };
     emit();
   }, 12_000);
+}
+
+// Settings › Claude Code in the browser: `?claudeCode=on` starts connected.
+let claudeCode: ClaudeCodeStatus = {
+  state: new URLSearchParams(location.search).get("claudeCode") === "on" ? "on" : "off",
+  settingsPath: "~/.claude/settings.json",
+  ownStatusLine: false,
+  lastReadingAt: null,
+  problem: "",
+};
+
+export async function claudeCodeStatus(): Promise<ClaudeCodeStatus> {
+  return claudeCode;
+}
+
+export async function connectClaudeCode(): Promise<ClaudeCodeStatus> {
+  await new Promise((r) => setTimeout(r, 300));
+  claudeCode = { ...claudeCode, state: "on", lastReadingAt: nowSec() - 120 };
+  return claudeCode;
+}
+
+export async function disconnectClaudeCode(): Promise<ClaudeCodeStatus> {
+  await new Promise((r) => setTimeout(r, 300));
+  claudeCode = { ...claudeCode, state: "off", lastReadingAt: null };
+  return claudeCode;
 }

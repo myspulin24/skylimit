@@ -58,11 +58,11 @@ function MoodPreview({ preview }: { preview: Preview }) {
 const MOODS: { mood: Mood; when: string }[] = [
   {
     mood: "confused",
-    when: "Nevím, kolik limitu zbývá: limity se nedaří načíst (Codex CLI chybí nebo neodpovídá, T3 Code zatím limity Claude nezapsal), nebo se změnil formát záznamů Claude Code.",
+    when: "Nevím, kolik limitu zbývá: limity se nedaří načíst (Codex CLI chybí nebo neodpovídá, Claude Code ani T3 Code zatím limity Claude nenahlásily), nebo se změnil formát záznamů Claude Code.",
   },
   {
     mood: "dozing",
-    when: "Znám jen starší číslo. Codex: poslední čtení je starší než 10 minut. Claude: po posledním záznamu z T3 Code běžel Claude jinde (terminál, Claude Desktop), takže limit může být vyšší.",
+    when: "Znám jen starší číslo. Codex: poslední čtení je starší než 10 minut. Claude: po posledním hlášení z Claude Code nebo T3 Code běžel Claude jinde (třeba v Claude Desktop), takže limit může být vyšší.",
   },
   { mood: "panic", when: "Limit 5h nebo týdenní je na 95 % a víc. Uklidní se, až klesne pod 90 %." },
   { mood: "sweat", when: "Limit 5h nebo týdenní je na 75 % a víc. Uklidní se, až klesne pod 70 %." },
@@ -91,7 +91,7 @@ const LIMIT_STATES: { value: string; sub: string; tone: string; title: string; t
     sub: "poslední známá · před 20 min",
     tone: "stale",
     title: "Zastaralé",
-    text: "Šrafovaný pruh. Codex neodpověděl přes 10 minut, nebo Claude běžel mimo T3 Code. Skutečné číslo může být vyšší.",
+    text: "Šrafovaný pruh. Codex neodpověděl přes 10 minut, nebo Claude běžel tam, odkud limity nechodí. Skutečné číslo může být vyšší.",
   },
   {
     value: "0 %",
@@ -116,10 +116,10 @@ const LIMIT_STATES: { value: string; sub: string; tone: string; title: string; t
   },
   {
     value: "–",
-    sub: "limity Claude jen přes T3 Code (nenalezen)",
+    sub: "limity Claude: připoj Claude Code v Nastavení",
     tone: "off",
     title: "Bez zdroje",
-    text: "Na tomhle počítači není T3 Code, takže limity Claude nejde zjistit. Postavička pak reaguje jen na skóre a aktivitu.",
+    text: "Claude Code není připojený a T3 Code tu není, takže limity Claude nejde zjistit. Postavička pak reaguje jen na skóre a aktivitu.",
   },
 ];
 
@@ -130,7 +130,7 @@ const SOURCES: { title: string; text: string }[] = [
   },
   {
     title: "Limity Claude",
-    text: "Události limitů z oficiálního Claude Agent SDK, které si T3 Code zapisuje do svých logů (~/.t3/userdata/logs/provider). Přihlašovací token Claude aplikace nikdy nečte. Práci v terminálu nebo v Claude Desktop SDK do logů nezapíše, proto číslo po ní zešedne na ~.",
+    text: "Dva zdroje, platí novější číslo. Claude Code v terminálu (iTerm2, Terminál…) je předává svému stavovému řádku po každé odpovědi, stačí ho připojit v Nastavení. T3 Code si zapisuje události limitů z oficiálního Claude Agent SDK do svých logů (~/.t3/userdata/logs/provider). Přihlašovací token Claude aplikace nikdy nečte. Claude Desktop limity nehlásí, proto číslo po práci v něm zešedne na ~.",
   },
   {
     title: "Skóre Claude",

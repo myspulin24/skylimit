@@ -5,7 +5,7 @@ export type Provider = "claude" | "codex";
 
 /** Freshness of one limit window. */
 export type WindowState = "known" | "stale" | "unknown" | "afterReset";
-/** Governing state of a provider's limits. "off" = no source (Claude without T3 Code, Codex disabled). */
+/** Governing state of a provider's limits. "off" = no source (Claude with neither Claude Code connected nor T3 Code, Codex disabled). */
 export type LimitsState = "known" | "stale" | "unknown" | "off";
 
 export interface LimitWindow {
@@ -22,7 +22,7 @@ export interface ProviderLimits {
   state: LimitsState;
   governing: number | null;   // max percent over 5h + week windows that have a value
   windows: LimitWindow[];
-  note: string | null;        // Czech UI hint, e.g. "Codex CLI nenalezen", "limity Claude jen přes T3 Code (nenalezen)"
+  note: string | null;        // Czech UI hint, e.g. "Codex CLI nenalezen", "limity Claude: připoj Claude Code v Nastavení"
 }
 
 /** "estimate": Codex cost from daily token totals × blended rate. */
@@ -120,4 +120,14 @@ export interface UpdateStatus {
   error: string | null;              // plain-language reason (manual check or install)
   checkedAt: number | null;          // epoch s of the last finished check
   auto: boolean;                     // automatic checks on (setting and environment)
+}
+
+/** Settings › Claude Code: Skylimit as Claude Code's status line (limits from any terminal). */
+export interface ClaudeCodeStatus {
+  /** "missing": no ~/.claude here; "moved": connected to a Skylimit at another path. */
+  state: "missing" | "off" | "on" | "moved";
+  settingsPath: string;              // Claude Code's settings.json
+  ownStatusLine: boolean;            // the user's own status line keeps running inside Skylimit's
+  lastReadingAt: number | null;      // when Claude Code last delivered limits (epoch s)
+  problem: string;                   // why connecting cannot work (macOS app not in Applications)
 }

@@ -8,6 +8,7 @@
 //!        └── commands (get/set settings, clear history) ◀── UI
 //! ```
 
+mod claude_code;
 mod commands;
 mod feedback;
 mod settings;
@@ -24,6 +25,11 @@ use crate::settings::DataPaths;
 use crate::shell::Shell;
 use crate::window_state::WindowTracker;
 use crate::windows::Placements;
+
+/// `skylimit statusline`, run by Claude Code after every response.
+pub fn statusline() -> i32 {
+    claude_code::run_cli()
+}
 
 pub fn run() {
     let built = tauri::Builder::default()
@@ -48,6 +54,9 @@ pub fn run() {
             commands::open_app,
             commands::open_feedback,
             commands::clear_history,
+            claude_code::claude_code_status,
+            claude_code::claude_code_connect,
+            claude_code::claude_code_disconnect,
             updater::update_status,
             updater::update_check,
             updater::update_install,
@@ -83,6 +92,7 @@ fn setup(app: &AppHandle) -> tauri::Result<()> {
     let mut config = Config::new(paths.claude_projects.clone(), paths.db(), paths.diag());
     config.codex = CodexSource::official();
     config.t3_logs_dir = Some(paths.t3_logs.clone());
+    config.claude_code_dir = Some(paths.claude_code());
     config.settings = settings.clone();
     config.fx = FxSource::Cnb;
     config.pricing_refresh = false;
