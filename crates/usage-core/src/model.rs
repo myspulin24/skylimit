@@ -220,6 +220,54 @@ pub struct Snapshot {
     pub updated_ago_sec: i64,
     /// Widget background transparency in percent, from settings (display only).
     pub widget_transparency: u8,
+    /// The widget's score for the period and amount from Settings › Widget.
+    pub widget: WidgetScore,
+}
+
+/// Settings › Widget: the period of the widget's score. `Month` is the
+/// calendar month of `scores` and `total`; the rest end now, like the
+/// History tab's periods.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum WidgetPeriod {
+    #[default]
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "24h")]
+    Day,
+    #[serde(rename = "7d")]
+    Week,
+    #[serde(rename = "30d")]
+    Days30,
+    #[serde(rename = "90d")]
+    Days90,
+    #[serde(rename = "all")]
+    All,
+}
+
+/// Settings › Widget: the score in API prices, or with what the cache saved
+/// added on top (what the same work would cost at API prices without it).
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum WidgetAmount {
+    #[default]
+    Api,
+    WithCacheSavings,
+}
+
+/// What the widget's score block shows. For the month in API prices it
+/// equals `scores` and `total`; otherwise the same fields for the chosen
+/// period, with the plan pro-rated to the period's days
+/// (`planMonthlyDisplay` then holds the plan for the period).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WidgetScore {
+    pub period: WidgetPeriod,
+    pub amount: WidgetAmount,
+    /// Providers shown in the widget (Codex is missing from 24 h: it reports days).
+    pub scores: Vec<ProviderScore>,
+    pub total: Total,
+    /// Trend for the sparkline per hour (24 h) or day, display currency.
+    pub spark: Vec<f64>,
 }
 
 impl Snapshot {
@@ -252,6 +300,18 @@ impl Snapshot {
             celebration: None,
             updated_ago_sec: 0,
             widget_transparency: 0,
+            widget: WidgetScore {
+                period: WidgetPeriod::Month,
+                amount: WidgetAmount::Api,
+                scores: Vec::new(),
+                total: Total {
+                    display: 0.0,
+                    multiple: None,
+                    plan_monthly_display: None,
+                    excluded_note: None,
+                },
+                spark: Vec::new(),
+            },
         }
     }
 
@@ -503,6 +563,10 @@ pub struct Settings {
     pub widget_transparency: u8,
     /// Look for a new version on GitHub after start and every 6 hours.
     pub check_updates: bool,
+    /// The period of the widget's score.
+    pub widget_period: WidgetPeriod,
+    /// The widget's score in API prices or with the cache savings.
+    pub widget_amount: WidgetAmount,
 }
 
 /// Above this the panel would vanish and the text lose its backdrop.
@@ -518,6 +582,8 @@ impl Default for Settings {
             click_through: false,
             widget_transparency: 0,
             check_updates: true,
+            widget_period: WidgetPeriod::Month,
+            widget_amount: WidgetAmount::Api,
         }
     }
 }
@@ -539,7 +605,9 @@ mod tests {
                 "excludedEntrypoints": [],
                 "clickThrough": false,
                 "widgetTransparency": 0,
-                "checkUpdates": true
+                "checkUpdates": true,
+                "widgetPeriod": "month",
+                "widgetAmount": "api"
             })
         );
     }

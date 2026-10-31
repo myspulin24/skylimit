@@ -8,12 +8,13 @@ html[data-window="app"] body {
   background-attachment: fixed;
 }
 
-/* Window is 720 px wide at least (windows.rs APP_MIN_SIZE); content caps at
-   1320 px and stays centred on big screens. */
+/* Window is 720 px wide at least (windows.rs APP_MIN_SIZE). Content fills
+   the window (side padding grows with it) and stops at 2000 px, where lines
+   would get too long to read; the grids below add columns as room grows. */
 .app {
-  max-width: 1320px;
+  max-width: 2000px;
   margin: 0 auto;
-  padding: 18px 28px 32px;
+  padding: 18px clamp(16px, 2.4vw, 44px) 32px;
 }
 
 .app-head {
@@ -137,12 +138,12 @@ html[data-window="app"] body {
   grid-column: span 5;
 }
 
-/* Breakdowns flow by width: three side by side on wide windows, two or one
-   below. Each card is as tall as its own rows. */
+/* Breakdowns flow by width: three side by side on wide windows (stretched
+   to the full width), two or one below. Each card is as tall as its rows. */
 .breakdowns {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr));
   gap: 14px;
   align-items: start;
 }
@@ -1054,12 +1055,37 @@ html[data-window="app"] body {
 /* ---------- settings ---------- */
 
 /* One centred column of groups (macOS System Settings style): a quiet title
-   above each, rows inside separated by hairlines, text left, control right. */
+   above each, rows inside separated by hairlines, text left, control right.
+   Wide windows flow the groups into two balanced columns; a group never
+   breaks across them. */
 .settings {
   display: grid;
   gap: 26px;
   max-width: 760px;
   margin: 4px auto 0;
+}
+
+.settings-groups {
+  display: grid;
+  gap: 26px;
+  min-width: 0;
+}
+
+@media (min-width: 1500px) {
+  .settings {
+    max-width: 1600px;
+  }
+
+  .settings-groups {
+    display: block;
+    columns: 2;
+    column-gap: 28px;
+  }
+
+  .settings-groups > * {
+    break-inside: avoid;
+    margin-bottom: 26px;
+  }
 }
 
 .group {
@@ -1480,6 +1506,14 @@ html[data-window="app"] body {
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+/* Wide windows: the moods in two columns instead of one long list. */
+@media (min-width: 1600px) {
+  .mood-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 8px;
+  }
 }
 
 .mood-item {

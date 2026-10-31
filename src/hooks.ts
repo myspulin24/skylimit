@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from "react";
 import { getSnapshot, onSnapshot } from "./api";
 import type { Snapshot } from "./types";
 
@@ -38,6 +38,29 @@ export function useSnapshot(): SnapshotState {
 }
 
 /** Wall clock that re-renders every `intervalMs`; skips ticks while the page is hidden. */
+/** Width of an element in CSS pixels, kept current while the window
+ *  resizes. Charts draw their viewBox at this width, so a wide window gets
+ *  wider bars at the same text size instead of a taller, scaled-up picture.
+ *  `fallback` stands in until the first measurement (and in tests). */
+export function useWidth<T extends Element>(fallback: number): [RefObject<T | null>, number] {
+  const ref = useRef<T | null>(null);
+  const [width, setWidth] = useState(fallback);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const measure = () => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w > 0) setWidth(w);
+    };
+    measure();
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, width];
+}
+
 export function useNow(intervalMs: number): number {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {

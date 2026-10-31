@@ -186,6 +186,21 @@ pub(crate) fn scores_and_total(
     settings: &Settings,
     fx: &FxDay,
 ) -> (Vec<ProviderScore>, Total) {
+    scores_and_total_for(cost, claude_state, codex_state, settings, fx, 1.0, None)
+}
+
+/// The same for another period (the widget): `plan_factor` pro-rates the
+/// monthly plans to it, `codex_gap` says why Codex (state Off) is missing
+/// from it.
+pub(crate) fn scores_and_total_for(
+    cost: &MonthCost,
+    claude_state: ScoreState,
+    codex_state: ScoreState,
+    settings: &Settings,
+    fx: &FxDay,
+    plan_factor: f64,
+    codex_gap: Option<&str>,
+) -> (Vec<ProviderScore>, Total) {
     let conv = fx.usd_to(settings.currency);
     let entries = [
         (Provider::Claude, &cost.claude, claude_state, settings.plans.claude.as_ref()),
@@ -200,7 +215,9 @@ pub(crate) fn scores_and_total(
 
     for (provider, totals, state, plan) in entries {
         let display = totals.usd * conv;
-        let plan_display = plan.map(|p| plan_monthly_display(p, settings, fx)).filter(|v| *v > 0.0);
+        let plan_display = plan
+            .map(|p| plan_monthly_display(p, settings, fx) * plan_factor)
+            .filter(|v| *v > 0.0);
         let multiple = match plan_display {
             Some(pd) if priced(state) => Some(display / pd),
             _ => None,
@@ -229,7 +246,9 @@ pub(crate) fn scores_and_total(
             }
             continue;
         }
+        let gap = codex_gap.filter(|_| provider == Provider::Codex && state == ScoreState::Off);
         let why = match state {
+            ScoreState::Off if gap.is_some() => gap.unwrap_or_default().to_string(),
             ScoreState::Off => format!("{} vypnutý", name(provider)),
             ScoreState::FormatChanged => format!("{}: formát záznamů se změnil", name(provider)),
             ScoreState::Unknown => format!("{} bez ceny", name(provider)),
@@ -238,7 +257,7 @@ pub(crate) fn scores_and_total(
         };
         if plan_display.is_some() {
             notes.push(format!("{why}, paušál nezapočten"));
-        } else if state != ScoreState::Off {
+        } else if state != ScoreState::Off || gap.is_some() {
             notes.push(format!("{why}, nezapočten"));
         }
     }

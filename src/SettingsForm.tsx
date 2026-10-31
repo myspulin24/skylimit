@@ -2,9 +2,9 @@
 // Settings object to the core. Click-through and widget transparency apply
 // immediately because the user wants to see the widget react while the app
 // window is open; so does starting at login (AutostartCheck), which lives in
-// the system, not in Settings. One centred column of titled groups, each a
-// list of rows with the text left and the control right (controls.tsx,
-// app.css "settings").
+// the system, not in Settings. One centred column of titled groups (two on
+// wide windows), each a list of rows with the text left and the control right
+// (controls.tsx, app.css "settings").
 
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { AccountsCard } from "./AccountsCard";
@@ -15,7 +15,7 @@ import { Group, Row, Select, Toggle, ToggleRow } from "./controls";
 import { PROVIDER_NAME, sourceLabel } from "./format";
 import { FeedbackIcon } from "./icons";
 import { UpdateLine } from "./update";
-import type { PlanSetting, Provider, Settings, Snapshot, UpdateStatus } from "./types";
+import type { PlanSetting, Provider, Settings, Snapshot, UpdateStatus, WidgetAmount, WidgetPeriod } from "./types";
 
 type PlanCurrency = PlanSetting["currency"];
 type PlanPeriod = PlanSetting["period"];
@@ -35,12 +35,28 @@ interface Draft {
   clickThrough: boolean;
   widgetTransparency: number;
   checkUpdates: boolean;
+  widgetPeriod: WidgetPeriod;
+  widgetAmount: WidgetAmount;
 }
 
 /** Same cap as the core (WIDGET_TRANSPARENCY_MAX). */
 export const TRANSPARENCY_MAX = 90;
 
 const PROVIDERS: Provider[] = ["claude", "codex"];
+
+const WIDGET_PERIODS: { id: WidgetPeriod; label: string }[] = [
+  { id: "month", label: "tento měsíc" },
+  { id: "24h", label: "posledních 24 hodin" },
+  { id: "7d", label: "posledních 7 dní" },
+  { id: "30d", label: "posledních 30 dní" },
+  { id: "90d", label: "posledních 90 dní" },
+  { id: "all", label: "celou historii" },
+];
+
+const WIDGET_AMOUNTS: { id: WidgetAmount; label: string }[] = [
+  { id: "api", label: "V cenách API" },
+  { id: "withCacheSavings", label: "Vč. úspory z cache" },
+];
 
 function toPlanDraft(plan: PlanSetting | null): PlanDraft {
   return plan
@@ -57,6 +73,8 @@ function toDraft(s: Settings): Draft {
     clickThrough: s.clickThrough,
     widgetTransparency: s.widgetTransparency,
     checkUpdates: s.checkUpdates,
+    widgetPeriod: s.widgetPeriod,
+    widgetAmount: s.widgetAmount,
   };
 }
 
@@ -95,6 +113,8 @@ function toSettings(d: Draft): Settings | { error: string } {
     clickThrough: d.clickThrough,
     widgetTransparency: d.widgetTransparency,
     checkUpdates: d.checkUpdates,
+    widgetPeriod: d.widgetPeriod,
+    widgetAmount: d.widgetAmount,
   };
 }
 
@@ -225,197 +245,231 @@ export function SettingsForm({
 
   return (
     <form className="settings" onSubmit={onSubmit} aria-label="Nastavení">
-      <AccountsCard />
+      <div className="settings-groups">
+        <AccountsCard />
 
-      <Group title="Paušál" footer="Kolik platíš za předplatné. Z toho se počítá násobek „vytěženo ×“. Prázdné pole znamená bez paušálu.">
-        {PROVIDERS.map((p) => {
-          const plan = draft.plans[p];
-          const name = PROVIDER_NAME[p];
-          return (
-            <Row
-              key={p}
-              title={
-                <span className="provider-title">
-                  <i className={`dot dot-${p}`} aria-hidden="true" />
-                  {name}
-                </span>
-              }
-            >
-              <div className="plan-controls">
-                <span className="input-group">
-                  <input
-                    className="input amount"
-                    type="text"
-                    inputMode="decimal"
-                    aria-label={`Částka paušálu ${name}`}
-                    placeholder="nezadáno"
-                    value={plan.amount}
-                    onChange={(e) => updatePlan(p, { amount: e.target.value })}
-                  />
-                  <Select
-                    className="joined"
-                    aria-label={`Měna paušálu ${name}`}
-                    value={plan.currency}
-                    onChange={(e) => updatePlan(p, { currency: e.target.value as PlanCurrency })}
-                  >
-                    <option value="EUR">EUR</option>
-                    <option value="CZK">CZK</option>
-                    <option value="USD">USD</option>
-                  </Select>
-                </span>
-                <Select
-                  aria-label={`Období paušálu ${name}`}
-                  value={plan.period}
-                  onChange={(e) => updatePlan(p, { period: e.target.value as PlanPeriod })}
-                >
-                  <option value="month">měsíčně</option>
-                  <option value="year">ročně</option>
-                </Select>
-              </div>
-            </Row>
-          );
-        })}
-      </Group>
-
-      <Group title="Skóre">
-        <Row title="Měna skóre">
-          <div className="segmented" role="radiogroup" aria-label="Měna skóre">
-            {(["EUR", "CZK"] as const).map((c) => (
-              <label key={c} className={draft.currency === c ? "is-on" : undefined}>
-                <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update_({ currency: c })} />
-                {c === "EUR" ? "EUR (€)" : "CZK (Kč)"}
-              </label>
-            ))}
-          </div>
-        </Row>
-        <ToggleRow
-          title="Započítat odhad Codexu do skóre"
-          desc="Codex hlásí jen denní součty tokenů, jeho cena je proto odhad."
-          checked={draft.codexEstimateInScore}
-          onChange={(on) => update_({ codexEstimateInScore: on })}
-        />
-        <Row
-          stacked
-          title="Co se počítá do skóre"
-          desc="Skóre počítá vše z lokálních záznamů. Provoz mimo předplatné (třeba aplikaci nad SDK s vlastním API klíčem) tu můžeš vypnout."
-        >
-          {sourceKeys.length === 0 ? (
-            <p className="row-desc">Zatím žádné zdroje.</p>
-          ) : (
-            <ul className="source-list">
-              {sourceKeys.map((key) => (
-                <li key={key}>
-                  <label className="source-item">
-                    <span className="source-name">
-                      {sourceLabel(key)} <span className="key">{key}</span>
-                    </span>
-                    <Toggle
-                      label={`${sourceLabel(key)} (${key})`}
-                      checked={!draft.excludedEntrypoints.includes(key)}
-                      onChange={(counted) => setCounted(key, counted)}
+        <Group title="Paušál" footer="Kolik platíš za předplatné. Z toho se počítá násobek „vytěženo ×“. Prázdné pole znamená bez paušálu.">
+          {PROVIDERS.map((p) => {
+            const plan = draft.plans[p];
+            const name = PROVIDER_NAME[p];
+            return (
+              <Row
+                key={p}
+                title={
+                  <span className="provider-title">
+                    <i className={`dot dot-${p}`} aria-hidden="true" />
+                    {name}
+                  </span>
+                }
+              >
+                <div className="plan-controls">
+                  <span className="input-group">
+                    <input
+                      className="input amount"
+                      type="text"
+                      inputMode="decimal"
+                      aria-label={`Částka paušálu ${name}`}
+                      placeholder="nezadáno"
+                      value={plan.amount}
+                      onChange={(e) => updatePlan(p, { amount: e.target.value })}
                     />
-                  </label>
-                </li>
+                    <Select
+                      className="joined"
+                      aria-label={`Měna paušálu ${name}`}
+                      value={plan.currency}
+                      onChange={(e) => updatePlan(p, { currency: e.target.value as PlanCurrency })}
+                    >
+                      <option value="EUR">EUR</option>
+                      <option value="CZK">CZK</option>
+                      <option value="USD">USD</option>
+                    </Select>
+                  </span>
+                  <Select
+                    aria-label={`Období paušálu ${name}`}
+                    value={plan.period}
+                    onChange={(e) => updatePlan(p, { period: e.target.value as PlanPeriod })}
+                  >
+                    <option value="month">měsíčně</option>
+                    <option value="year">ročně</option>
+                  </Select>
+                </div>
+              </Row>
+            );
+          })}
+        </Group>
+
+        <Group title="Skóre">
+          <Row title="Měna skóre">
+            <div className="segmented" role="radiogroup" aria-label="Měna skóre">
+              {(["EUR", "CZK"] as const).map((c) => (
+                <label key={c} className={draft.currency === c ? "is-on" : undefined}>
+                  <input type="radio" name="currency" value={c} checked={draft.currency === c} onChange={() => update_({ currency: c })} />
+                  {c === "EUR" ? "EUR (€)" : "CZK (Kč)"}
+                </label>
               ))}
-            </ul>
-          )}
-        </Row>
-      </Group>
-
-      <Group title="Widget">
-        <div className="row">
-          <div className="row-text">
-            <label className="row-title" htmlFor="widget-transparency">
-              Průhlednost widgetu
-            </label>
-            <div className="row-desc">Průhledné je jen pozadí, text, pruhy a postavičky zůstanou čitelné.</div>
-          </div>
-          <div className="row-control range-control">
-            <input
-              id="widget-transparency"
-              className="range"
-              type="range"
-              min={0}
-              max={TRANSPARENCY_MAX}
-              step={5}
-              style={fill}
-              value={draft.widgetTransparency}
-              onChange={(e) => onTransparency(Number(e.target.value))}
-            />
-            <output htmlFor="widget-transparency" className="range-value num">
-              {draft.widgetTransparency} %
-            </output>
-          </div>
-        </div>
-        <ToggleRow
-          title="Průchod kliknutí"
-          desc="Widget nereaguje na myš. Vypnout jde i z ikony v oznamovací oblasti."
-          checked={draft.clickThrough}
-          onChange={onClickThrough}
-        />
-        <AutostartCheck />
-      </Group>
-
-      <ClaudeCodeCard />
-
-      <Group title="O aplikaci">
-        <Row
-          title={
-            <span className="about-name">
-              Skylimit <span className="num">{__APP_VERSION__}</span>
-            </span>
-          }
-          desc="Widget, který hlídá limity Claude a Codexu a počítá práci v cenách API. © 2026 Michal Jašek · licence MIT · github.com/myspulin24/skylimit"
-        >
-          <button type="button" className="btn with-icon" onClick={onOpenFeedback}>
-            <FeedbackIcon />
-            Poslat zpětnou vazbu
-          </button>
-        </Row>
-        <UpdateLine status={update} />
-        <ToggleRow
-          title="Hledat novou verzi automaticky"
-          desc="Po spuštění a pak každých 6 hodin."
-          checked={draft.checkUpdates}
-          onChange={(on) => update_({ checkUpdates: on })}
-        />
-      </Group>
-
-      <Group title="Historie" tone="danger">
-        {clear === "confirm" || clear === "busy" ? (
-          <div className="row confirm-row" role="alertdialog" aria-label="Potvrzení smazání historie">
-            <div className="row-text">
-              <div className="row-title">Opravdu smazat celou historii?</div>
-              <div className="row-desc">Tohle nejde vrátit.</div>
             </div>
-            <div className="row-control">
-              <button type="button" className="btn" disabled={clear === "busy"} onClick={() => setClear("idle")}>
-                Zrušit
-              </button>
-              <button type="button" className="btn danger" disabled={clear === "busy"} onClick={() => void onConfirmClear()}>
-                Ano, smazat natrvalo
-              </button>
-            </div>
-          </div>
-        ) : (
+          </Row>
+          <ToggleRow
+            title="Započítat odhad Codexu do skóre"
+            desc="Codex hlásí jen denní součty tokenů, jeho cena je proto odhad."
+            checked={draft.codexEstimateInScore}
+            onChange={(on) => update_({ codexEstimateInScore: on })}
+          />
           <Row
-            title="Smazat historii skóre"
-            desc={
-              clear === "done" ? (
-                <span className="status ok">Historie smazána.</span>
-              ) : clear === "error" ? (
-                <span className="status err">Historii se nepodařilo smazat.</span>
-              ) : (
-                "Historie je jediná kopie: Claude Code staré záznamy časem maže, takže smazanou historii už nepůjde obnovit."
-              )
-            }
+            stacked
+            title="Co se počítá do skóre"
+            desc="Skóre počítá vše z lokálních záznamů. Provoz mimo předplatné (třeba aplikaci nad SDK s vlastním API klíčem) tu můžeš vypnout."
           >
-            <button type="button" className="btn danger-outline" onClick={() => setClear("confirm")}>
-              Smazat historii
+            {sourceKeys.length === 0 ? (
+              <p className="row-desc">Zatím žádné zdroje.</p>
+            ) : (
+              <ul className="source-list">
+                {sourceKeys.map((key) => (
+                  <li key={key}>
+                    <label className="source-item">
+                      <span className="source-name">
+                        {sourceLabel(key)} <span className="key">{key}</span>
+                      </span>
+                      <Toggle
+                        label={`${sourceLabel(key)} (${key})`}
+                        checked={!draft.excludedEntrypoints.includes(key)}
+                        onChange={(counted) => setCounted(key, counted)}
+                      />
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Row>
+        </Group>
+
+        <Group title="Widget">
+          <Row title="Cena ve widgetu za" desc="Násobek paušálu se u jiného období než měsíce přepočte na jeho délku.">
+            <Select
+              aria-label="Cena ve widgetu za"
+              value={draft.widgetPeriod}
+              onChange={(e) => update_({ widgetPeriod: e.target.value as WidgetPeriod })}
+            >
+              {WIDGET_PERIODS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+            </Select>
+          </Row>
+          <Row
+            title="Cena ve widgetu"
+            desc="Vč. úspory z cache: k ceně se přičte, kolik ušetřila cache, tedy kolik by stejná práce stála v cenách API bez ní."
+          >
+            <div className="segmented" role="radiogroup" aria-label="Cena ve widgetu">
+              {WIDGET_AMOUNTS.map((a) => (
+                <label key={a.id} className={draft.widgetAmount === a.id ? "is-on" : undefined}>
+                  <input
+                    type="radio"
+                    name="widget-amount"
+                    value={a.id}
+                    checked={draft.widgetAmount === a.id}
+                    onChange={() => update_({ widgetAmount: a.id })}
+                  />
+                  {a.label}
+                </label>
+              ))}
+            </div>
+          </Row>
+          <div className="row">
+            <div className="row-text">
+              <label className="row-title" htmlFor="widget-transparency">
+                Průhlednost widgetu
+              </label>
+              <div className="row-desc">Průhledné je jen pozadí, text, pruhy a postavičky zůstanou čitelné.</div>
+            </div>
+            <div className="row-control range-control">
+              <input
+                id="widget-transparency"
+                className="range"
+                type="range"
+                min={0}
+                max={TRANSPARENCY_MAX}
+                step={5}
+                style={fill}
+                value={draft.widgetTransparency}
+                onChange={(e) => onTransparency(Number(e.target.value))}
+              />
+              <output htmlFor="widget-transparency" className="range-value num">
+                {draft.widgetTransparency} %
+              </output>
+            </div>
+          </div>
+          <ToggleRow
+            title="Průchod kliknutí"
+            desc="Widget nereaguje na myš. Vypnout jde i z ikony v oznamovací oblasti."
+            checked={draft.clickThrough}
+            onChange={onClickThrough}
+          />
+          <AutostartCheck />
+        </Group>
+
+        <ClaudeCodeCard />
+
+        <Group title="O aplikaci">
+          <Row
+            title={
+              <span className="about-name">
+                Skylimit <span className="num">{__APP_VERSION__}</span>
+              </span>
+            }
+            desc="Widget, který hlídá limity Claude a Codexu a počítá práci v cenách API. © 2026 Michal Jašek · licence MIT · github.com/myspulin24/skylimit"
+          >
+            <button type="button" className="btn with-icon" onClick={onOpenFeedback}>
+              <FeedbackIcon />
+              Poslat zpětnou vazbu
             </button>
           </Row>
-        )}
-      </Group>
+          <UpdateLine status={update} />
+          <ToggleRow
+            title="Hledat novou verzi automaticky"
+            desc="Po spuštění a pak každých 6 hodin."
+            checked={draft.checkUpdates}
+            onChange={(on) => update_({ checkUpdates: on })}
+          />
+        </Group>
+
+        <Group title="Historie" tone="danger">
+          {clear === "confirm" || clear === "busy" ? (
+            <div className="row confirm-row" role="alertdialog" aria-label="Potvrzení smazání historie">
+              <div className="row-text">
+                <div className="row-title">Opravdu smazat celou historii?</div>
+                <div className="row-desc">Tohle nejde vrátit.</div>
+              </div>
+              <div className="row-control">
+                <button type="button" className="btn" disabled={clear === "busy"} onClick={() => setClear("idle")}>
+                  Zrušit
+                </button>
+                <button type="button" className="btn danger" disabled={clear === "busy"} onClick={() => void onConfirmClear()}>
+                  Ano, smazat natrvalo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <Row
+              title="Smazat historii skóre"
+              desc={
+                clear === "done" ? (
+                  <span className="status ok">Historie smazána.</span>
+                ) : clear === "error" ? (
+                  <span className="status err">Historii se nepodařilo smazat.</span>
+                ) : (
+                  "Historie je jediná kopie: Claude Code staré záznamy časem maže, takže smazanou historii už nepůjde obnovit."
+                )
+              }
+            >
+              <button type="button" className="btn danger-outline" onClick={() => setClear("confirm")}>
+                Smazat historii
+              </button>
+            </Row>
+          )}
+        </Group>
+      </div>
 
       <div className={dirty || status.kind !== "idle" ? "settings-actions is-shown" : "settings-actions"}>
         <span className={`status ${status.kind === "error" ? "err" : "ok"}`} role="status">

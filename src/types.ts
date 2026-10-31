@@ -44,6 +44,22 @@ export type Mood =
 
 export interface BreakdownRow { key: string; usd: number; display: number; tokens: number }
 
+/** Settings › Widget: the period of the widget's score ("month" = this calendar month). */
+export type WidgetPeriod = "month" | "24h" | "7d" | "30d" | "90d" | "all";
+/** "withCacheSavings": what the cache saved added on top (the work at API prices without the cache). */
+export type WidgetAmount = "api" | "withCacheSavings";
+
+/** The widget's score block. Month in API prices = `scores` and `total`; otherwise the
+ *  same fields for the period, the plan pro-rated to its days (`planMonthlyDisplay` is then
+ *  the plan for the period). Codex is "off" in 24 h: it reports days. */
+export interface WidgetScore {
+  period: WidgetPeriod;
+  amount: WidgetAmount;
+  scores: ProviderScore[];
+  total: Snapshot["total"];
+  spark: number[];                   // per hour (24 h) or day, display currency
+}
+
 export interface Snapshot {
   generatedAt: number;
   month: string;                     // "2026-10" (Europe/Prague)
@@ -67,6 +83,7 @@ export interface Snapshot {
   celebration: { id: string; who: Provider | "both"; text: string } | null;
   updatedAgoSec: number;             // seconds since last data change
   widgetTransparency: number;        // 0..90 %, widget background (from settings)
+  widget: WidgetScore;               // the widget's score (Settings › Widget)
 }
 
 export interface PlanSetting { amount: number; currency: "EUR" | "CZK" | "USD"; period: "month" | "year" }
@@ -79,6 +96,8 @@ export interface Settings {
   clickThrough: boolean;             // default false
   widgetTransparency: number;        // 0..90 (percent), default 0; applied immediately
   checkUpdates: boolean;             // default true; automatic update checks
+  widgetPeriod: WidgetPeriod;        // default "month"
+  widgetAmount: WidgetAmount;        // default "api"
 }
 
 // Feedback ("Zpětná vazba"), shell commands `feedback_status` / `feedback_send`.

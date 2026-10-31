@@ -156,6 +156,7 @@ function normal(now: number): Snapshot {
     celebration: null,
     updatedAgoSec: 120,
     widgetTransparency: 0,
+    widget: { period: "month", amount: "api", scores: [], total: { display: 0, multiple: null, planMonthlyDisplay: null, excludedNote: null }, spark: [] },
   };
 }
 
@@ -348,17 +349,37 @@ function claudeOff(now: number): Snapshot {
   return s;
 }
 
+/** The widget's default score: the month in API prices, i.e. the snapshot's own. */
+export function monthWidget(s: Snapshot): Snapshot["widget"] {
+  return {
+    period: "month",
+    amount: "api",
+    scores: structuredClone(s.scores),
+    total: { ...s.total },
+    spark: s.daily.map((d) => d.claudeDisplay + d.codexDisplay),
+  };
+}
+
+/** Fixtures adjust scores after `normal`; the widget follows at the end. */
+const withWidget =
+  (make: (now: number) => Snapshot) =>
+  (now: number): Snapshot => {
+    const s = make(now);
+    s.widget = monthWidget(s);
+    return s;
+  };
+
 export const fixtures: Record<FixtureName, (now: number) => Snapshot> = {
-  normal,
-  stale,
-  codexMissing,
-  codexGone,
-  formatChanged,
-  noPlan,
-  backfill,
-  celebration,
-  panic,
-  claudeOff,
+  normal: withWidget(normal),
+  stale: withWidget(stale),
+  codexMissing: withWidget(codexMissing),
+  codexGone: withWidget(codexGone),
+  formatChanged: withWidget(formatChanged),
+  noPlan: withWidget(noPlan),
+  backfill: withWidget(backfill),
+  celebration: withWidget(celebration),
+  panic: withWidget(panic),
+  claudeOff: withWidget(claudeOff),
 };
 
 export function defaultSettings(): Settings {
@@ -373,6 +394,8 @@ export function defaultSettings(): Settings {
     clickThrough: false,
     widgetTransparency: 0,
     checkUpdates: true,
+    widgetPeriod: "month",
+    widgetAmount: "api",
   };
 }
 

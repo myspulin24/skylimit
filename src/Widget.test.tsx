@@ -50,6 +50,23 @@ describe("Widget", () => {
     expect(screen.getByText("4,6×")).toBeInTheDocument();
   });
 
+  it("score of the period from Settings › Widget, not the month", async () => {
+    const s = fixtures.normal(nowSec());
+    s.widget = {
+      ...s.widget,
+      period: "7d",
+      amount: "withCacheSavings",
+      scores: s.widget.scores.map((x) => ({ ...x, display: x.provider === "claude" ? 300 : 21 })),
+      total: { ...s.widget.total, display: 321, multiple: 7.3 },
+      spark: [10, 40, 0, 80, 60, 90, 41],
+    };
+    await renderWidget(s);
+    expect(screen.getByText("321 €")).toBeInTheDocument();
+    expect(screen.getByText("za 7 dní vč. úspory z cache")).toBeInTheDocument();
+    expect(screen.getByText("7,3×")).toBeInTheDocument();
+    expect(screen.queryByText("930 €")).toBeNull();
+  });
+
   it("Claude limits from T3 Code: 5h and week rows like Codex", async () => {
     await renderWidget(fixtures.normal(nowSec()));
     const five = rowOf(screen.getByText("Claude · 5h"));

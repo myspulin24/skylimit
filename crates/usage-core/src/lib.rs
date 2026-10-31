@@ -719,22 +719,7 @@ impl CoreState {
         let settings = self.settings.lock().map(|s| s.clone()).unwrap_or_default();
         let codex_days = self.store.codex_buckets().unwrap_or_default();
         let codex_enabled = !self.codex.disabled;
-        let first_claude = if filter == HistoryFilter::Codex {
-            None
-        } else {
-            self.store.first_usage_hour("claude")
-        };
-        let first_codex = if filter == HistoryFilter::Claude || !codex_enabled {
-            None
-        } else {
-            codex_days
-                .iter()
-                .filter(|(_, t)| *t > 0)
-                .filter_map(|(d, _)| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
-                .min()
-                .map(score::local_midnight)
-        };
-        let first_data_at = first_claude.into_iter().chain(first_codex).min();
+        let first_data_at = self.first_data_at(filter, &codex_days);
         let period = history::Period::new(range, now, first_data_at);
         let rows = self.store.usage_rows(period.from, period.query_end).unwrap_or_default();
         let web = self.store.web_rows(period.from, period.query_end).unwrap_or_default();
@@ -749,6 +734,7 @@ impl CoreState {
                 prices: &self.prices,
                 codex_rate: self.prices.codex_blended_usd_per_token(),
                 codex_enabled,
+                excluded: &[],
                 conv: self.fx.usd_to(settings.currency),
                 currency: settings.currency,
                 first_data_at,
@@ -1150,7 +1136,7 @@ impl CoreState {
             },
         ];
 
-        let daily = score::month_days(&mb)
+        let daily: Vec<DailyRow> = score::month_days(&mb)
             .into_iter()
             .map(|d| DailyRow {
                 date: d.format("%Y-%m-%d").to_string(),
@@ -1162,6 +1148,15 @@ impl CoreState {
                 },
             })
             .collect();
+
+        let widget = self.widget_score(
+            now,
+            &settings,
+            (&scores, &total, &daily),
+            format_changed,
+            codex_state,
+            &all_buckets,
+        );
 
         Snapshot {
             generated_at: now,
@@ -1192,7 +1187,135 @@ impl CoreState {
             celebration,
             updated_ago_sec: (now - self.last_change_at).max(0),
             widget_transparency: settings.widget_transparency.min(WIDGET_TRANSPARENCY_MAX),
+            widget,
         }
+    }
+
+    /// The widget's score (Settings › Widget). The month in API prices is the
+    /// snapshot's own; another period or the cache savings come from
+    /// `history::aggregate`, priced like the month, honouring "Co se počítá do
+    /// skóre", with the plans pro-rated to the period's days.
+    fn widget_score(
+        &self,
+        now: i64,
+        settings: &Settings,
+        month: (&[ProviderScore], &Total, &[DailyRow]),
+        format_changed: bool,
+        codex_state: ScoreState,
+        codex_days: &[(String, u64)],
+    ) -> WidgetScore {
+        let (period_setting, amount) = (settings.widget_period, settings.widget_amount);
+        if period_setting == WidgetPeriod::Month && amount == WidgetAmount::Api {
+            let (scores, total, daily) = month;
+            return WidgetScore {
+                period: period_setting,
+                amount,
+                scores: scores.to_vec(),
+                total: total.clone(),
+                spark: daily.iter().map(|d| d.claude_display + d.codex_display).collect(),
+            };
+        }
+        let range = match period_setting {
+            WidgetPeriod::Month => None,
+            WidgetPeriod::Day => Some(HistoryRange::Day),
+            WidgetPeriod::Week => Some(HistoryRange::Week),
+            WidgetPeriod::Days30 => Some(HistoryRange::Month),
+            WidgetPeriod::Days90 => Some(HistoryRange::Quarter),
+            WidgetPeriod::All => Some(HistoryRange::All),
+        };
+        let period = match range {
+            None => history::Period::new_month(now),
+            Some(r) => history::Period::new(r, now, self.first_data_at(HistoryFilter::All, codex_days)),
+        };
+        let rows = self.store.usage_rows(period.from, period.query_end).unwrap_or_default();
+        let web = self.store.web_rows(period.from, period.query_end).unwrap_or_default();
+        let conv = self.fx.usd_to(settings.currency);
+        let codex_rate = self.prices.codex_blended_usd_per_token();
+        let codex_enabled = !self.codex.disabled;
+        let agg = history::aggregate(
+            &period,
+            HistoryFilter::All,
+            &history::Inputs {
+                rows: &rows,
+                web: &web,
+                codex_days,
+                prices: &self.prices,
+                codex_rate,
+                codex_enabled,
+                excluded: &settings.excluded_entrypoints,
+                conv,
+                currency: settings.currency,
+                first_data_at: None,
+            },
+        );
+        let savings = amount == WidgetAmount::WithCacheSavings;
+        let hourly = period.bucket == HistoryBucket::Hour;
+        let cost = score::MonthCost {
+            claude: score::ProviderTotals {
+                usd: agg.claude.usd + if savings { agg.savings } else { 0.0 },
+                tokens: agg.claude.tokens,
+                unpriced: agg.claude_unpriced,
+            },
+            codex: score::ProviderTotals {
+                usd: agg.codex.usd,
+                tokens: agg.codex.tokens,
+                unpriced: agg.codex_unpriced,
+            },
+            ..score::MonthCost::default()
+        };
+        let claude_state = if format_changed {
+            ScoreState::FormatChanged
+        } else if !self.claude_dir_exists && agg.claude.tokens == 0 {
+            ScoreState::Unknown
+        } else if agg.claude_unpriced > 0 {
+            ScoreState::Partial
+        } else {
+            ScoreState::Ok
+        };
+        // Codex reports days: it has no place in the last 24 hours.
+        let codex_state = if hourly { ScoreState::Off } else { codex_state };
+        let gap = (hourly && codex_enabled).then_some("Codex hlásí jen dny");
+        let plan_factor = match range {
+            None => 1.0,
+            Some(_) => period.day_count() as f64 / (365.25 / 12.0),
+        };
+        let (scores, total) =
+            score::scores_and_total_for(&cost, claude_state, codex_state, settings, &self.fx, plan_factor, gap);
+        let with_codex = codex_state == ScoreState::Estimate && settings.codex_estimate_in_score;
+        let spark = (0..agg.claude_pts.len())
+            .map(|i| {
+                let claude = agg.claude_pts[i].usd + if savings { agg.savings_pts[i] } else { 0.0 };
+                let codex = if with_codex { agg.codex_pts[i].usd } else { 0.0 };
+                (claude + codex) * conv
+            })
+            .collect();
+        WidgetScore {
+            period: period_setting,
+            amount,
+            scores,
+            total,
+            spark,
+        }
+    }
+
+    /// Oldest record of the providers a filter shows: how far "all" reaches.
+    fn first_data_at(&self, filter: HistoryFilter, codex_days: &[(String, u64)]) -> Option<i64> {
+        let first_claude = if filter == HistoryFilter::Codex {
+            None
+        } else {
+            self.store.first_usage_hour("claude")
+        };
+        let first_codex = if filter == HistoryFilter::Claude || self.codex.disabled {
+            None
+        } else {
+            codex_days
+                .iter()
+                .filter(|(_, t)| *t > 0)
+                .filter_map(|(d, _)| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                .min()
+                .map(score::local_midnight)
+        };
+        first_claude.into_iter().chain(first_codex).min()
     }
 
     /// Milestones are evaluated only on live data: after the first backfill
@@ -1243,6 +1366,7 @@ impl CoreState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::pricing::TokenKind;
     use crate::claude::ClaudeRecord;
     use crate::claude::FileState;
     use std::sync::atomic::AtomicI64;
@@ -1447,6 +1571,97 @@ mod tests {
         st.t3_cache_seen.clear();
         st.import_t3_history(t0 + 2 * T3_HISTORY_CHECK_SECS);
         assert_eq!(st.history(HistoryRange::All, HistoryFilter::All, t0).total_tokens, 28 * 100);
+    }
+
+    #[test]
+    fn widget_score_follows_its_period_and_amount() {
+        let t0 = 1_793_190_000; // 2026-10-28 12:20 UTC
+        let mut st = bare_state(Arc::new(AtomicI64::new(t0)));
+        let record = |key: u64, ts: i64, entrypoint: &str, tokens: [u64; 5]| ClaudeRecord {
+            entrypoint: entrypoint.into(),
+            tokens,
+            ..output_record(key, ts, 0)
+        };
+        let batch = |st: &mut CoreState, records: Vec<ClaudeRecord>| {
+            st.apply(
+                Update::ClaudeBatch(claude::FileBatch {
+                    epoch: 0,
+                    path: "f".into(),
+                    state: FileState {
+                        created: None,
+                        prefix_len: 0,
+                        prefix_hash: 0,
+                        size: 0,
+                        mtime: 0,
+                        offset: 0,
+                    },
+                    records,
+                    health: Vec::new(),
+                }),
+                t0,
+            )
+        };
+        batch(
+            &mut st,
+            vec![
+                // Today: 1 M cache reads and 10 k output.
+                record(1, t0 - 600, "cli", [0, 10_000, 1_000_000, 0, 0]),
+                // 20 days ago (this month, outside the week).
+                record(2, t0 - 20 * 86_400, "cli", [0, 50_000, 0, 0, 0]),
+                // An excluded source today.
+                record(3, t0 - 600, "sdk-ts", [0, 70_000, 0, 0, 0]),
+            ],
+        );
+        let unit = |k: TokenKind| {
+            st.prices
+                .lookup("claude-opus-5-5")
+                .unwrap()
+                .unit_price(k, 0, "standard", "standard")
+                .unwrap()
+        };
+        let (read, out, input) = (unit(TokenKind::CacheRead), unit(TokenKind::Output), unit(TokenKind::Input));
+        let conv = st.fx.usd_to(Currency::Eur);
+        if let Ok(mut s) = st.settings.lock() {
+            s.excluded_entrypoints = vec!["sdk-ts".into()];
+        }
+
+        // Default: the month, exactly the snapshot's own score.
+        let s = st.compute(t0);
+        assert_eq!(s.widget.period, WidgetPeriod::Month);
+        assert_eq!(s.widget.total, s.total);
+        assert_eq!(s.widget.scores, s.scores);
+        assert_eq!(s.widget.spark.len(), s.daily.len());
+
+        // Last 7 days in API prices, plan pro-rated to 7 days.
+        if let Ok(mut s) = st.settings.lock() {
+            s.widget_period = WidgetPeriod::Week;
+        }
+        let s = st.compute(t0);
+        let week_usd = 1e6 * read + 1e4 * out;
+        assert!((s.widget.total.display - week_usd * conv).abs() < 1e-9);
+        let plan = conv * 7.0 / (365.25 / 12.0);
+        assert!((s.widget.total.plan_monthly_display.unwrap() - plan).abs() < 1e-9);
+        assert!((s.widget.total.multiple.unwrap() - week_usd * conv / plan).abs() < 1e-9);
+        assert_eq!(s.widget.spark.len(), 7);
+        assert!(s.total.display > s.widget.total.display, "the month also has the day 20 days ago");
+
+        // With the cache savings on top.
+        if let Ok(mut s) = st.settings.lock() {
+            s.widget_amount = WidgetAmount::WithCacheSavings;
+        }
+        let s = st.compute(t0);
+        let saved = 1e6 * (input - read);
+        assert!((s.widget.total.display - (week_usd + saved) * conv).abs() < 1e-9);
+        let claude = s.widget.scores.iter().find(|x| x.provider == Provider::Claude).unwrap();
+        assert!((claude.display - (week_usd + saved) * conv).abs() < 1e-9);
+
+        // The month with savings keeps the month's days.
+        if let Ok(mut s) = st.settings.lock() {
+            s.widget_period = WidgetPeriod::Month;
+        }
+        let s = st.compute(t0);
+        assert!((s.widget.total.display - (week_usd + 5e4 * out + saved) * conv).abs() < 1e-9);
+        assert_eq!(s.widget.total.plan_monthly_display, s.total.plan_monthly_display);
     }
 
     #[test]

@@ -91,8 +91,11 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
   a barva podle zaplnění (zelená, od 75 % oranžová, od 95 % červená).
   Pod týdenním limitem Claude je řádek **Claude · Fable**, pokud má účet na
   Fable vlastní týdenní limit.
-- **Skóre měsíce v cenách API** s násobkem paušálu („vytěženo 4,6×“)
-  a křivkou po dnech.
+- **Skóre v cenách API** s násobkem paušálu („vytěženo 4,6×“) a křivkou
+  po dnech. Výchozí je tento měsíc; v **Nastavení › Widget** jde přepnout na
+  posledních 24 hodin, 7, 30 nebo 90 dní nebo celou historii (násobek se
+  přepočte na délku období) a na cenu **včetně úspory z cache**, tedy kolik
+  by stejná práce stála v cenách API bez cache.
 - **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned, **bublina**
   otevře okno se zpětnou vazbou.
 - **Průhlednost** (0–90 %) a **průchod kliknutí**, kdy widget nereaguje na myš.
@@ -137,8 +140,13 @@ v aplikaci ukáže všechny s velkým animovaným náhledem.
 - **Stavy:** všechny nálady, stavy řádků limitů, značky u skóre a barvy ikony.
 - **Nastavení:** **Účty** (s jakým účtem Claude a Codexu je Skylimit
   spojený: e-mail, tarif, organizace nebo workspace, role, resety limitu),
-  paušál a měna (EUR, CZK), co počítat do skóre, průhlednost widgetu,
-  průchod kliknutí, smazání historie a **O aplikaci** (verze, licence).
+  paušál a měna (EUR, CZK), co počítat do skóre, za jaké období a jakou
+  cenu ukazuje widget, průhlednost widgetu, průchod kliknutí, smazání
+  historie a **O aplikaci** (verze, licence).
+
+Okno se přizpůsobí šířce: na velké obrazovce využije celou šířku (grafy se
+roztáhnou, Nastavení a nálady ve Stavech jsou ve dvou sloupcích), na úzké
+se karty složí pod sebe.
 - **Zpětná vazba:** formulář pro chybu, změnu nebo vylepšení s volitelnou
   přílohou. Snímek obrazovky jde vložit rovnou ze schránky (⌘V, Ctrl+V).
   Viz [Soukromí](#soukromí-a-oprávnění).

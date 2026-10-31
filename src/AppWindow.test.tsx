@@ -167,6 +167,8 @@ describe("AppWindow · Nastavení", () => {
     await user.clear(screen.getByLabelText("Částka paušálu Codex"));
     await user.click(screen.getByLabelText("Započítat odhad Codexu do skóre"));
     await user.click(screen.getByLabelText(/Terminál/));
+    await user.selectOptions(screen.getByLabelText("Cena ve widgetu za"), "7d");
+    await user.click(screen.getByLabelText("Vč. úspory z cache"));
     await user.click(screen.getByRole("button", { name: "Uložit" }));
 
     expect(api.setSettings).toHaveBeenCalledTimes(1);
@@ -181,6 +183,8 @@ describe("AppWindow · Nastavení", () => {
       clickThrough: false,
       widgetTransparency: 0,
       checkUpdates: true,
+      widgetPeriod: "7d",
+      widgetAmount: "withCacheSavings",
     });
     expect(await screen.findByText("Uloženo.")).toBeInTheDocument();
   });

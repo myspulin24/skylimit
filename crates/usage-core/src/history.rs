@@ -2,7 +2,8 @@
 //! (model, day, source, project), the split by token type and what the cache
 //! saved. Like the month it is priced at query time from stored tokens, so a
 //! new price list reprices the whole history. One query per view, answered
-//! on the core thread; nothing here goes into the widget's snapshot.
+//! on the core thread. The widget's score for a period other than the month
+//! (Settings › Widget) reuses [`aggregate`].
 //!
 //! ```text
 //!  range ─▶ period (24 h by hours, else Prague days up to today)
@@ -20,7 +21,7 @@ use crate::model::{
     HistoryRange, HistoryRow, Provider,
 };
 use crate::pricing::{normalize_model, PriceTable, TokenKind};
-use crate::score::{local_midnight, prague_date};
+use crate::score::{local_midnight, month_bounds, month_days, prague_date};
 use crate::store::{UsageRow, WebRow};
 
 /// The key of Codex's single row in every breakdown.
@@ -75,7 +76,26 @@ impl Period {
         }
     }
 
-    fn len(&self) -> usize {
+    /// This calendar month by days (the widget's default period).
+    pub(crate) fn new_month(now: i64) -> Period {
+        let mb = month_bounds(now);
+        Period {
+            bucket: HistoryBucket::Day,
+            from: mb.start,
+            query_end: now.div_euclid(3600) * 3600 + 3600,
+            days: month_days(&mb),
+        }
+    }
+
+    /// Days the period spans (24 h = 1), for pro-rating a monthly plan.
+    pub(crate) fn day_count(&self) -> usize {
+        match self.bucket {
+            HistoryBucket::Hour => 1,
+            HistoryBucket::Day => self.days.len().max(1),
+        }
+    }
+
+    pub(crate) fn len(&self) -> usize {
         match self.bucket {
             HistoryBucket::Hour => 24,
             HistoryBucket::Day => self.days.len(),
@@ -108,6 +128,9 @@ pub(crate) struct Inputs<'a> {
     pub codex_rate: Option<f64>,
     /// Codex switched off: its old days stay out like in the month.
     pub codex_enabled: bool,
+    /// Entrypoints left out (the widget's score honours "Co se počítá do
+    /// skóre"; the History tab shows everything).
+    pub excluded: &'a [String],
     /// USD → display currency.
     pub conv: f64,
     pub currency: Currency,
@@ -115,9 +138,9 @@ pub(crate) struct Inputs<'a> {
 }
 
 #[derive(Default)]
-struct Acc {
-    usd: f64,
-    tokens: u64,
+pub(crate) struct Acc {
+    pub usd: f64,
+    pub tokens: u64,
 }
 
 impl Acc {
@@ -149,64 +172,84 @@ const KIND_ORDER: [HistoryKind; 6] = [
     HistoryKind::Codex,
 ];
 
-pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &Inputs<'_>) -> History {
-    let period = Period::new(range, now, inp.first_data_at);
-    let show_claude = filter != HistoryFilter::Codex;
-    let show_codex = filter != HistoryFilter::Claude && inp.codex_enabled;
-    let codex_in_view = show_codex && period.bucket == HistoryBucket::Day;
+/// A period's sums in USD, before any conversion.
+#[derive(Default)]
+pub(crate) struct Agg {
+    pub claude: Acc,
+    pub claude_unpriced: u64,
+    pub codex: Acc,
+    pub codex_unpriced: u64,
+    /// Cache reads against the full input price.
+    pub savings: f64,
+    pub claude_pts: Vec<Acc>,
+    pub codex_pts: Vec<Acc>,
+    pub savings_pts: Vec<f64>,
+    kinds: HashMap<HistoryKind, Acc>,
+    by_model: HashMap<String, Acc>,
+    by_source: HashMap<String, Acc>,
+    by_project: HashMap<String, Acc>,
+    by_day: HashMap<String, Acc>,
+}
 
+/// Price a period's rows. Codex enters only day buckets: it reports days.
+pub(crate) fn aggregate(period: &Period, filter: HistoryFilter, inp: &Inputs<'_>) -> Agg {
+    let show_claude = filter != HistoryFilter::Codex;
+    let codex_in_view = filter != HistoryFilter::Claude && inp.codex_enabled && period.bucket == HistoryBucket::Day;
     let n = period.len();
-    let mut claude_pts: Vec<Acc> = (0..n).map(|_| Acc::default()).collect();
-    let mut codex_pts: Vec<Acc> = (0..n).map(|_| Acc::default()).collect();
-    let mut claude = Acc::default();
-    let mut claude_unpriced = 0u64;
-    let mut codex = Acc::default();
-    let mut codex_unpriced = 0u64;
-    let mut kinds: HashMap<HistoryKind, Acc> = HashMap::new();
-    let mut savings = 0.0;
-    let mut by_model = HashMap::new();
-    let mut by_source = HashMap::new();
-    let mut by_project = HashMap::new();
-    let mut by_day = HashMap::new();
+    let mut a = Agg {
+        claude_pts: (0..n).map(|_| Acc::default()).collect(),
+        codex_pts: (0..n).map(|_| Acc::default()).collect(),
+        savings_pts: vec![0.0; n],
+        ..Agg::default()
+    };
+    let excluded = |e: &str| inp.excluded.iter().any(|x| x == e);
 
     if show_claude {
         for r in inp.rows {
+            if excluded(&r.entrypoint) {
+                continue;
+            }
             let Some(i) = period.index_of_hour(r.hour) else { continue };
             let price = inp.prices.lookup(&r.model);
             let unit = |k: TokenKind| price.and_then(|p| p.unit_price(k, r.band, &r.speed, &r.service_tier));
             let usd = match unit(r.kind) {
                 Some(u) => u * r.tokens as f64,
                 None => {
-                    claude_unpriced += r.tokens;
+                    a.claude_unpriced += r.tokens;
                     0.0
                 }
             };
             if r.kind == TokenKind::CacheRead {
                 if let (Some(full), Some(cached)) = (unit(TokenKind::Input), unit(TokenKind::CacheRead)) {
-                    savings += (full - cached).max(0.0) * r.tokens as f64;
+                    let saved = (full - cached).max(0.0) * r.tokens as f64;
+                    a.savings += saved;
+                    a.savings_pts[i] += saved;
                 }
             }
-            claude.add(usd, r.tokens);
-            claude_pts[i].add(usd, r.tokens);
-            kinds.entry(kind_of(r.kind)).or_default().add(usd, r.tokens);
-            bump(&mut by_model, &normalize_model(&r.model), usd, r.tokens);
-            bump(&mut by_source, &r.entrypoint, usd, r.tokens);
-            bump(&mut by_project, &r.project, usd, r.tokens);
-            bump(&mut by_day, &prague_date(r.hour).format("%Y-%m-%d").to_string(), usd, r.tokens);
+            a.claude.add(usd, r.tokens);
+            a.claude_pts[i].add(usd, r.tokens);
+            a.kinds.entry(kind_of(r.kind)).or_default().add(usd, r.tokens);
+            bump(&mut a.by_model, &normalize_model(&r.model), usd, r.tokens);
+            bump(&mut a.by_source, &r.entrypoint, usd, r.tokens);
+            bump(&mut a.by_project, &r.project, usd, r.tokens);
+            bump(&mut a.by_day, &prague_date(r.hour).format("%Y-%m-%d").to_string(), usd, r.tokens);
         }
         for w in inp.web {
+            if excluded(&w.entrypoint) {
+                continue;
+            }
             let Some(i) = period.index_of_hour(w.hour) else { continue };
             let Some(price) = inp.prices.lookup(&w.model).and_then(|p| p.web_search_price()) else {
                 continue;
             };
             let usd = price * w.requests as f64;
-            claude.add(usd, 0);
-            claude_pts[i].add(usd, 0);
-            kinds.entry(HistoryKind::WebSearch).or_default().add(usd, 0);
-            bump(&mut by_model, &normalize_model(&w.model), usd, 0);
-            bump(&mut by_source, &w.entrypoint, usd, 0);
-            bump(&mut by_project, &w.project, usd, 0);
-            bump(&mut by_day, &prague_date(w.hour).format("%Y-%m-%d").to_string(), usd, 0);
+            a.claude.add(usd, 0);
+            a.claude_pts[i].add(usd, 0);
+            a.kinds.entry(HistoryKind::WebSearch).or_default().add(usd, 0);
+            bump(&mut a.by_model, &normalize_model(&w.model), usd, 0);
+            bump(&mut a.by_source, &w.entrypoint, usd, 0);
+            bump(&mut a.by_project, &w.project, usd, 0);
+            bump(&mut a.by_day, &prague_date(w.hour).format("%Y-%m-%d").to_string(), usd, 0);
         }
     }
 
@@ -217,22 +260,30 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
             let usd = match inp.codex_rate {
                 Some(rate) => rate * *tokens as f64,
                 None => {
-                    codex_unpriced += tokens;
+                    a.codex_unpriced += tokens;
                     0.0
                 }
             };
-            codex.add(usd, *tokens);
-            codex_pts[i].add(usd, *tokens);
-            kinds.entry(HistoryKind::Codex).or_default().add(usd, *tokens);
-            for map in [&mut by_model, &mut by_source, &mut by_project] {
+            a.codex.add(usd, *tokens);
+            a.codex_pts[i].add(usd, *tokens);
+            a.kinds.entry(HistoryKind::Codex).or_default().add(usd, *tokens);
+            for map in [&mut a.by_model, &mut a.by_source, &mut a.by_project] {
                 bump(map, CODEX_KEY, usd, *tokens);
             }
-            bump(&mut by_day, date, usd, *tokens);
+            bump(&mut a.by_day, date, usd, *tokens);
         }
     }
+    a
+}
+
+pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &Inputs<'_>) -> History {
+    let period = Period::new(range, now, inp.first_data_at);
+    let show_claude = filter != HistoryFilter::Codex;
+    let show_codex = filter != HistoryFilter::Claude && inp.codex_enabled;
+    let a = aggregate(&period, filter, inp);
 
     let conv = inp.conv;
-    let series: Vec<HistoryPoint> = (0..n)
+    let series: Vec<HistoryPoint> = (0..period.len())
         .map(|i| {
             let (start, date) = match period.bucket {
                 HistoryBucket::Hour => (period.from + i as i64 * 3600, None),
@@ -244,10 +295,10 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
             HistoryPoint {
                 start,
                 date,
-                claude_display: claude_pts[i].usd * conv,
-                codex_display: codex_pts[i].usd * conv,
-                claude_tokens: claude_pts[i].tokens,
-                codex_tokens: codex_pts[i].tokens,
+                claude_display: a.claude_pts[i].usd * conv,
+                codex_display: a.codex_pts[i].usd * conv,
+                claude_tokens: a.claude_pts[i].tokens,
+                codex_tokens: a.codex_pts[i].tokens,
             }
         })
         .collect();
@@ -257,18 +308,18 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
     if show_claude {
         providers.push(HistoryProvider {
             provider: Provider::Claude,
-            display: claude.usd * conv,
-            tokens: claude.tokens,
-            unpriced_tokens: claude_unpriced,
+            display: a.claude.usd * conv,
+            tokens: a.claude.tokens,
+            unpriced_tokens: a.claude_unpriced,
             estimate: false,
         });
     }
     if show_codex {
         providers.push(HistoryProvider {
             provider: Provider::Codex,
-            display: codex.usd * conv,
-            tokens: codex.tokens,
-            unpriced_tokens: codex_unpriced,
+            display: a.codex.usd * conv,
+            tokens: a.codex.tokens,
+            unpriced_tokens: a.codex_unpriced,
             estimate: inp.codex_rate.is_some(),
         });
     }
@@ -276,27 +327,23 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
     let kinds = KIND_ORDER
         .iter()
         .filter_map(|k| {
-            let a = kinds.get(k)?;
+            let acc = a.kinds.get(k)?;
             Some(HistoryKindRow {
                 kind: *k,
-                tokens: a.tokens,
-                display: a.usd * conv,
+                tokens: acc.tokens,
+                display: acc.usd * conv,
             })
         })
         .collect();
 
-    let rows = |map: HashMap<String, Acc>, codex_row: bool| -> Vec<HistoryRow> {
+    let rows = |map: HashMap<String, Acc>| -> Vec<HistoryRow> {
         let mut out: Vec<HistoryRow> = map
             .into_iter()
-            .map(|(key, a)| HistoryRow {
-                provider: Some(if codex_row && key == CODEX_KEY {
-                    Provider::Codex
-                } else {
-                    Provider::Claude
-                }),
+            .map(|(key, acc)| HistoryRow {
+                provider: Some(if key == CODEX_KEY { Provider::Codex } else { Provider::Claude }),
                 key,
-                display: a.usd * conv,
-                tokens: a.tokens,
+                display: acc.usd * conv,
+                tokens: acc.tokens,
             })
             .collect();
         out.sort_by(|a, b| {
@@ -307,13 +354,14 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
         });
         out
     };
-    let mut by_day: Vec<HistoryRow> = by_day
+    let mut by_day: Vec<HistoryRow> = a
+        .by_day
         .into_iter()
-        .map(|(key, a)| HistoryRow {
+        .map(|(key, acc)| HistoryRow {
             key,
             provider: None,
-            display: a.usd * conv,
-            tokens: a.tokens,
+            display: acc.usd * conv,
+            tokens: acc.tokens,
         })
         .collect();
     by_day.sort_by(|a, b| b.key.cmp(&a.key));
@@ -327,16 +375,16 @@ pub(crate) fn build(range: HistoryRange, filter: HistoryFilter, now: i64, inp: &
         to: now,
         first_data_at: inp.first_data_at,
         active_buckets,
-        total_display: (claude.usd + codex.usd) * conv,
-        total_tokens: claude.tokens + codex.tokens,
+        total_display: (a.claude.usd + a.codex.usd) * conv,
+        total_tokens: a.claude.tokens + a.codex.tokens,
         providers,
         kinds,
-        cache_savings_display: savings * conv,
+        cache_savings_display: a.savings * conv,
         series,
-        by_model: rows(by_model, true),
+        by_model: rows(a.by_model),
         by_day,
-        by_source: rows(by_source, true),
-        by_project: rows(by_project, true),
+        by_source: rows(a.by_source),
+        by_project: rows(a.by_project),
         codex_without_hours: show_codex && period.bucket == HistoryBucket::Hour,
     }
 }
@@ -371,6 +419,7 @@ mod tests {
             prices,
             codex_rate: Some(1e-6),
             codex_enabled: true,
+            excluded: &[],
             conv: 1.0,
             currency: Currency::Eur,
             first_data_at: rows.iter().map(|r| r.hour).min(),

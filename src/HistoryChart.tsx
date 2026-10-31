@@ -1,14 +1,15 @@
 // History tab chart: stacked bars per hour (24 h) or day (Claude bottom,
 // Codex top), in money or tokens. Same marks as the month's DailyChart; the
 // bar count follows the period, so labels thin out to about seven.
-// Geometry is in SVG attributes only (no inline styles, CSP-safe).
+// Geometry is in SVG attributes only (no inline styles, CSP-safe); the
+// viewBox follows the figure's width like the month's chart.
 
 import { useState } from "react";
-import { niceCeil } from "./DailyChart";
+import { CHART_MIN_W, niceCeil } from "./DailyChart";
+import { useWidth } from "./hooks";
 import { dayLabel, formatMoney, formatMoneyTick, formatTokens, hourLabel, shortDate } from "./format";
 import type { History, HistoryPoint } from "./types";
 
-const W = 640;
 const H = 240;
 const M = { top: 12, right: 6, bottom: 22, left: 58 };
 const GAP = 2; // surface gap between stacked segments
@@ -33,6 +34,8 @@ function topRounded(x: number, y: number, w: number, h: number, r: number): stri
 
 export function HistoryChart({ history, metric }: { history: History; metric: Metric }) {
   const [hover, setHover] = useState<number | null>(null);
+  const [ref, measured] = useWidth<HTMLElement>(640);
+  const W = Math.max(CHART_MIN_W, measured);
   const { series, currency } = history;
   const fmt = (v: number) => (metric === "cost" ? formatMoney(v, currency) : formatTokens(v));
   const codexShown = history.providers.some((p) => p.provider === "codex") && !history.codexWithoutHours;
@@ -47,13 +50,14 @@ export function HistoryChart({ history, metric }: { history: History; metric: Me
   const barW = Math.max(1, Math.min(slotW * 0.64, 22));
   const y = (v: number) => M.top + plotH - (v / max) * plotH;
   const ticks = [0, max / 2, max];
-  const every = Math.max(1, Math.ceil(n / LABELS));
+  // About one label per 90 px, at most seven.
+  const every = Math.max(1, Math.ceil(n / Math.min(LABELS, Math.max(3, Math.floor(plotW / 90)))));
   const base = M.top + plotH;
   const hovered = hover !== null ? series[hover] : undefined;
   const label = history.bucket === "hour" ? "po hodinách" : "po dnech";
 
   return (
-    <figure className="daily-chart history-chart">
+    <figure className="daily-chart history-chart" ref={ref}>
       <div className="legend" aria-hidden="true">
         {claudeShown && (
           <span>
@@ -110,7 +114,7 @@ export function HistoryChart({ history, metric }: { history: History; metric: Me
         })}
 
         {hovered && hover !== null && (
-          <Tooltip index={hover} slotW={slotW} point={hovered} metric={metric} fmt={fmt} y={y} claudeShown={claudeShown} codexShown={codexShown} />
+          <Tooltip index={hover} slotW={slotW} width={W} point={hovered} metric={metric} fmt={fmt} y={y} claudeShown={claudeShown} codexShown={codexShown} />
         )}
       </svg>
     </figure>
@@ -120,6 +124,7 @@ export function HistoryChart({ history, metric }: { history: History; metric: Me
 function Tooltip({
   index,
   slotW,
+  width: W,
   point,
   metric,
   fmt,
@@ -129,6 +134,7 @@ function Tooltip({
 }: {
   index: number;
   slotW: number;
+  width: number;
   point: HistoryPoint;
   metric: Metric;
   fmt: (v: number) => string;

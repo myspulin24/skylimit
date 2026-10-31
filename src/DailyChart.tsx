@@ -1,13 +1,19 @@
 // Stacked daily bars (Claude bottom, Codex top) for the whole month. Days not
 // reached yet keep an empty slot so the month's progress is visible.
-// Geometry is in SVG attributes only (no inline styles, CSP-safe).
+// Geometry is in SVG attributes only (no inline styles, CSP-safe); the
+// viewBox follows the figure's width, so text keeps its size on any window.
 
 import { useState } from "react";
+import { useWidth } from "./hooks";
 import { formatMoney, formatMoneyTick, shortDate } from "./format";
 import type { Snapshot } from "./types";
 
-const W = 640;
 const H = 250;
+/** Width before the first measurement, and the narrowest drawing. */
+export const CHART_MIN_W = 320;
+const CHART_FALLBACK_W = 640;
+/** Bars stay slim on wide windows. */
+const BAR_MAX = 26;
 const M = { top: 12, right: 6, bottom: 22, left: 50 };
 const GAP = 2; // surface gap between stacked segments
 
@@ -38,6 +44,8 @@ function topRounded(x: number, y: number, w: number, h: number, r: number): stri
 export function DailyChart({ snapshot }: { snapshot: Snapshot }) {
   const { daily, currency, month } = snapshot;
   const [hover, setHover] = useState<number | null>(null);
+  const [ref, measured] = useWidth<HTMLElement>(CHART_FALLBACK_W);
+  const W = Math.max(CHART_MIN_W, measured);
   const codexEstimate = snapshot.scores.some((s) => s.provider === "codex" && s.state === "estimate");
 
   const slots = Math.max(daysInMonth(month), daily.length);
@@ -45,14 +53,14 @@ export function DailyChart({ snapshot }: { snapshot: Snapshot }) {
   const plotW = W - M.left - M.right;
   const plotH = H - M.top - M.bottom;
   const slotW = plotW / slots;
-  const barW = Math.max(3, slotW * 0.64);
+  const barW = Math.min(BAR_MAX, Math.max(3, slotW * 0.64));
   const y = (v: number) => M.top + plotH - (v / max) * plotH;
   const ticks = [0, max / 2, max];
 
   const hovered = hover !== null ? daily[hover] : undefined;
 
   return (
-    <figure className="daily-chart">
+    <figure className="daily-chart" ref={ref}>
       <div className="legend" aria-hidden="true">
         <span>
           <i className="dot dot-claude" /> Claude
@@ -105,7 +113,7 @@ export function DailyChart({ snapshot }: { snapshot: Snapshot }) {
           );
         })}
 
-        {hovered && hover !== null && <Tooltip index={hover} slotW={slotW} day={hovered} currency={currency} y={y} />}
+        {hovered && hover !== null && <Tooltip index={hover} slotW={slotW} width={W} day={hovered} currency={currency} y={y} />}
       </svg>
     </figure>
   );
@@ -114,12 +122,14 @@ export function DailyChart({ snapshot }: { snapshot: Snapshot }) {
 function Tooltip({
   index,
   slotW,
+  width: W,
   day,
   currency,
   y,
 }: {
   index: number;
   slotW: number;
+  width: number;
   day: Snapshot["daily"][number];
   currency: Snapshot["currency"];
   y: (v: number) => number;

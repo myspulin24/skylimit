@@ -58,6 +58,26 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.12.0] — 2026-10-31
+
+### Přidáno
+
+- **Za jaké období ukazuje widget cenu.** V **Nastavení › Widget › Cena ve
+  widgetu za** vybereš tento měsíc (výchozí), posledních 24 hodin, 7, 30
+  nebo 90 dní, nebo celou historii. Násobek paušálu se přepočte na délku
+  období, takže i za týden ukazuje, jak rychle paušál vytěžuješ. Codex
+  hlásí jen celé dny, a proto v pohledu na 24 hodin chybí.
+- **Cena ve widgetu včetně úspory z cache.** Místo ceny v cenách API může
+  widget ukázat cenu s přičtenou úsporou z cache, tedy kolik by stejná
+  práce stála v cenách API bez ní.
+
+### Změněno
+
+- **Okno aplikace se přizpůsobí šířce.** Na velké obrazovce využije celou
+  šířku: grafy se roztáhnou do šířky a nezvětšují se do výšky, rozpady
+  vyplní řádek a Nastavení i nálady ve Stavech se rozloží do dvou
+  sloupců. Na úzkém okně se karty dál skládají pod sebe.
+
 ## [0.11.0] — 2026-10-31
 
 ### Přidáno
@@ -365,7 +385,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.11.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/myspulin24/skylimit/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/myspulin24/skylimit/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/myspulin24/skylimit/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/myspulin24/skylimit/compare/v0.9.0...v0.10.0

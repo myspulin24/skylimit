@@ -9,6 +9,7 @@ import {
   fixtureSettings,
   fixtures,
   isFixtureName,
+  monthWidget,
   nowSec,
   type FixtureName,
 } from "./fixtures";
@@ -69,7 +70,56 @@ function applySettings(snapshot: Snapshot, prefs: Settings): Snapshot {
     planMonthlyDisplay: planTotal > 0 ? planTotal : null,
     excludedNote: notes.length ? notes.join(" · ") : null,
   };
+  s.widget = widgetFor(s, prefs);
   return s;
+}
+
+const MONTH_DAYS = 365.25 / 12;
+
+/** The widget's score for the chosen period and amount, from the generated
+ *  history (the month with savings scales the month by the 30-day ratio). */
+function widgetFor(s: Snapshot, prefs: Settings): Snapshot["widget"] {
+  const month = monthWidget(s);
+  if (prefs.widgetPeriod === "month" && prefs.widgetAmount === "api") return month;
+  const savings = prefs.widgetAmount === "withCacheSavings";
+  const range = prefs.widgetPeriod === "month" ? "30d" : prefs.widgetPeriod;
+  const h = mockHistory(range, "all", prefs.currency, nowSec(), { codexOff: s.scores.some((x) => x.provider === "codex" && x.state === "off") });
+  const claudeH = h.providers.find((p) => p.provider === "claude");
+  const ratio = claudeH && claudeH.display > 0 ? h.cacheSavingsDisplay / claudeH.display : 0;
+  const days = prefs.widgetPeriod === "month" ? MONTH_DAYS : range === "24h" ? 1 : h.series.length;
+  const factor = prefs.widgetPeriod === "month" ? 1 : days / MONTH_DAYS;
+  const hourly = range === "24h";
+  const scores = month.scores.map((sc) => {
+    const out = { ...sc };
+    if (prefs.widgetPeriod !== "month") {
+      const p = h.providers.find((x) => x.provider === sc.provider);
+      out.display = p?.display ?? 0;
+      out.tokens = p?.tokens ?? 0;
+      if (hourly && sc.provider === "codex") out.state = "off";
+    }
+    if (savings && sc.provider === "claude") out.display *= 1 + ratio;
+    out.planMonthlyDisplay = sc.planMonthlyDisplay === null ? null : sc.planMonthlyDisplay * factor;
+    out.multiple = out.planMonthlyDisplay && priced(out) ? out.display / out.planMonthlyDisplay : null;
+    return out;
+  });
+  const counted = scores.filter((sc) => priced(sc) && !(sc.provider === "codex" && sc.state === "estimate" && !prefs.codexEstimateInScore));
+  const display = counted.reduce((sum, sc) => sum + sc.display, 0);
+  const withPlan = counted.filter((sc) => sc.planMonthlyDisplay);
+  const plan = withPlan.reduce((sum, sc) => sum + (sc.planMonthlyDisplay ?? 0), 0);
+  const priced_ = withPlan.reduce((sum, sc) => sum + sc.display, 0);
+  const spark = prefs.widgetPeriod === "month" ? month.spark.map((v) => v * (savings ? 1 + ratio : 1)) : h.series.map((p) => p.claudeDisplay * (savings ? 1 + ratio : 1) + p.codexDisplay);
+  return {
+    period: prefs.widgetPeriod,
+    amount: prefs.widgetAmount,
+    scores,
+    total: {
+      display,
+      multiple: plan > 0 ? priced_ / plan : null,
+      planMonthlyDisplay: plan > 0 ? plan : null,
+      excludedNote: hourly && prefs.plans.codex ? "Codex hlásí jen dny, paušál nezapočten" : null,
+    },
+    spark,
+  };
 }
 
 export const fixtureName: FixtureName = readFixtureName();

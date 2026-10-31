@@ -22,7 +22,7 @@ import {
 } from "./format";
 import { useNow, useSnapshot } from "./hooks";
 import { hasOffer, useUpdate } from "./update";
-import type { LimitWindow, Mood, Provider, ProviderLimits, ProviderScore, Snapshot } from "./types";
+import type { LimitWindow, Mood, Provider, ProviderLimits, ProviderScore, Snapshot, WidgetPeriod } from "./types";
 import "./styles/widget.css";
 
 export function Widget() {
@@ -214,8 +214,23 @@ function LimitRow({ provider, win, nowSec }: { provider: Provider; win: LimitWin
   );
 }
 
+const PERIOD_CAPTION: Record<WidgetPeriod, string> = {
+  month: "tento měsíc",
+  "24h": "za 24 hodin",
+  "7d": "za 7 dní",
+  "30d": "za 30 dní",
+  "90d": "za 90 dní",
+  all: "za celou historii",
+};
+
+/** "tento měsíc v cenách API", "za 7 dní vč. úspory z cache" */
+export function scoreCaption(widget: Snapshot["widget"]): string {
+  return `${PERIOD_CAPTION[widget.period]} ${widget.amount === "api" ? "v cenách API" : "vč. úspory z cache"}`;
+}
+
 function ScoreBlock({ snapshot }: { snapshot: Snapshot }) {
-  const { total, currency, scores } = snapshot;
+  const { currency, widget } = snapshot;
+  const { total, scores } = widget;
   const visible = scores.filter((s) => s.state !== "off");
   const uncertain = visible.some((s) => isUncertainScore(s.state));
   const noPlan = scores.every((s) => s.planMonthlyDisplay === null);
@@ -233,7 +248,7 @@ function ScoreBlock({ snapshot }: { snapshot: Snapshot }) {
               </span>
             )}
           </div>
-          <div className="score-caption">tento měsíc v cenách API</div>
+          <div className="score-caption">{scoreCaption(widget)}</div>
         </div>
         <div className="score-side">
           {total.multiple !== null ? (
@@ -245,7 +260,7 @@ function ScoreBlock({ snapshot }: { snapshot: Snapshot }) {
               Zadej, kolik platíš
             </button>
           ) : null}
-          <Sparkline daily={snapshot.daily} />
+          <Sparkline values={widget.spark} />
         </div>
       </div>
 
@@ -291,9 +306,8 @@ function ProviderScoreChip({ score, currency }: { score: ProviderScore; currency
   );
 }
 
-/** Tiny SVG trend of daily API-equivalent cost; geometry lives in attributes. */
-export function Sparkline({ daily }: { daily: Snapshot["daily"] }) {
-  const values = daily.map((d) => d.claudeDisplay + d.codexDisplay);
+/** Tiny SVG trend of the score per day (or hour); geometry lives in attributes. */
+export function Sparkline({ values }: { values: number[] }) {
   if (values.length < 2) return null;
   const w = 100;
   const h = 28;
