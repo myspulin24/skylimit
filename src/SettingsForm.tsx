@@ -37,6 +37,7 @@ interface Draft {
   checkUpdates: boolean;
   widgetPeriod: WidgetPeriod;
   widgetAmount: WidgetAmount;
+  hideOnFullscreen: boolean;
 }
 
 /** Same cap as the core (WIDGET_TRANSPARENCY_MAX). */
@@ -75,6 +76,7 @@ function toDraft(s: Settings): Draft {
     checkUpdates: s.checkUpdates,
     widgetPeriod: s.widgetPeriod,
     widgetAmount: s.widgetAmount,
+    hideOnFullscreen: s.hideOnFullscreen,
   };
 }
 
@@ -115,6 +117,7 @@ function toSettings(d: Draft): Settings | { error: string } {
     checkUpdates: d.checkUpdates,
     widgetPeriod: d.widgetPeriod,
     widgetAmount: d.widgetAmount,
+    hideOnFullscreen: d.hideOnFullscreen,
   };
 }
 
@@ -400,6 +403,12 @@ export function SettingsForm({
               </output>
             </div>
           </div>
+          <ToggleRow
+            title="Schovat při aplikaci přes celou obrazovku"
+            desc="Video, hra nebo prezentace přes celou obrazovku na monitoru s widgetem: widget se schová a po skončení se vrátí. Na macOSu má taková aplikace vlastní plochu, kde widget není nikdy."
+            checked={draft.hideOnFullscreen}
+            onChange={(on) => update_({ hideOnFullscreen: on })}
+          />
           <ToggleRow
             title="Průchod kliknutí"
             desc="Widget nereaguje na myš. Vypnout jde i z ikony v oznamovací oblasti."

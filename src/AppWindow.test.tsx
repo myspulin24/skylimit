@@ -169,6 +169,7 @@ describe("AppWindow · Nastavení", () => {
     await user.click(screen.getByLabelText(/Terminál/));
     await user.selectOptions(screen.getByLabelText("Cena ve widgetu za"), "7d");
     await user.click(screen.getByLabelText("Vč. úspory z cache"));
+    await user.click(screen.getByLabelText("Schovat při aplikaci přes celou obrazovku"));
     await user.click(screen.getByRole("button", { name: "Uložit" }));
 
     expect(api.setSettings).toHaveBeenCalledTimes(1);
@@ -185,6 +186,7 @@ describe("AppWindow · Nastavení", () => {
       checkUpdates: true,
       widgetPeriod: "7d",
       widgetAmount: "withCacheSavings",
+      hideOnFullscreen: false,
     });
     expect(await screen.findByText("Uloženo.")).toBeInTheDocument();
   });

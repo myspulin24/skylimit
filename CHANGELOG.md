@@ -58,6 +58,19 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.13.0] — 2026-10-31
+
+### Přidáno
+
+- **Widget ustoupí aplikaci přes celou obrazovku.** Když na monitoru
+  s widgetem běží video na celou obrazovku (třeba YouTube), hra nebo
+  prezentace, widget se schová a po skončení se zase ukáže. Klávesnici té
+  aplikaci nevezme. Aplikace přes celou obrazovku na jiném monitoru
+  widget nechá být, maximalizované okno se nepočítá. Vypnout jde v
+  **Nastavení › Widget › Schovat při aplikaci přes celou obrazovku**
+  (výchozí zapnuto). Platí pro Windows. Na macOSu má taková aplikace
+  vlastní plochu, kde widget není.
+
 ## [0.12.0] — 2026-10-31
 
 ### Přidáno
@@ -385,7 +398,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.12.0...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/myspulin24/skylimit/compare/v0.12.0...v0.13.0
 [0.12.0]: https://github.com/myspulin24/skylimit/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/myspulin24/skylimit/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/myspulin24/skylimit/compare/v0.10.0...v0.10.1

@@ -567,6 +567,9 @@ pub struct Settings {
     pub widget_period: WidgetPeriod,
     /// The widget's score in API prices or with the cache savings.
     pub widget_amount: WidgetAmount,
+    /// Hide the widget while another app fills its monitor (the shell's
+    /// `fullscreen.rs`, Windows).
+    pub hide_on_fullscreen: bool,
 }
 
 /// Above this the panel would vanish and the text lose its backdrop.
@@ -584,6 +587,7 @@ impl Default for Settings {
             check_updates: true,
             widget_period: WidgetPeriod::Month,
             widget_amount: WidgetAmount::Api,
+            hide_on_fullscreen: true,
         }
     }
 }
@@ -607,7 +611,8 @@ mod tests {
                 "widgetTransparency": 0,
                 "checkUpdates": true,
                 "widgetPeriod": "month",
-                "widgetAmount": "api"
+                "widgetAmount": "api",
+                "hideOnFullscreen": true
             })
         );
     }

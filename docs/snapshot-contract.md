@@ -105,6 +105,7 @@ export interface Settings {
   checkUpdates: boolean;             // default true; automatic update checks
   widgetPeriod: WidgetPeriod;        // default "month"
   widgetAmount: WidgetAmount;        // default "api"
+  hideOnFullscreen: boolean;         // default true; widget steps aside for full-screen apps (Windows)
 }
 ```
 

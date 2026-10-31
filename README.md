@@ -99,6 +99,10 @@ přetáhnout za scénu s postavičkami a pamatuje si, kde stálo.
 - **Obnovit** vedle ozubeného kolečka načte všechny zdroje hned, **bublina**
   otevře okno se zpětnou vazbou.
 - **Průhlednost** (0–90 %) a **průchod kliknutí**, kdy widget nereaguje na myš.
+- **Ustoupí aplikaci přes celou obrazovku:** při videu, hře nebo prezentaci
+  přes celou obrazovku na monitoru s widgetem se widget schová a po skončení
+  se vrátí, aniž by té aplikaci vzal klávesnici. Vypíná se v **Nastavení ›
+  Widget**. Na macOSu má taková aplikace vlastní plochu, kde widget není.
 - **Spouštění po přihlášení** (**Nastavení › Widget**, výchozí stav vypnuto):
   Skylimit se spustí sám, jakmile se přihlásíš do Windows, macOS nebo Linuxu.
   Na macOS musí běžet ze složky Aplikace.
@@ -315,6 +319,10 @@ nechá jen procenta limitů, čas resetu, identifikátor relace a počítadla, p
 kterých pozná novou odpověď. Pracovní složku, model ani cestu k přepisu
 neukládá. Do `~/.claude/settings.json` zapisuje jen po kliknutí na
 **Připojit** nebo **Odpojit** a jen klíč `statusLine`.
+
+Aby widget ustoupil aplikaci přes celou obrazovku, dívá se Skylimit na Windows
+dvakrát za sekundu na okno v popředí: jen na jeho rozměry, styl a třídu okna
+(aby poznal plochu a hlavní panel), nikdy na název ani obsah.
 
 Spouštění po přihlášení zapisuje jen po zaškrtnutí a jen jeden vlastní záznam
 s cestou ke Skylimitu do seznamu, který systém spouští po přihlášení:

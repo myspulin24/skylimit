@@ -396,6 +396,7 @@ export function defaultSettings(): Settings {
     checkUpdates: true,
     widgetPeriod: "month",
     widgetAmount: "api",
+    hideOnFullscreen: true,
   };
 }
 

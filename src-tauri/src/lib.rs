@@ -12,6 +12,7 @@ mod autostart;
 mod claude_code;
 mod commands;
 mod feedback;
+mod fullscreen;
 mod settings;
 mod shell;
 mod tray;
@@ -116,6 +117,7 @@ fn setup(app: &AppHandle) -> tauri::Result<()> {
 
     tray::create(app, settings.click_through)?;
     windows::create_widget(app, settings.click_through)?;
+    fullscreen::spawn(app.clone());
     spawn_snapshot_pump(app.clone(), snapshots);
     Ok(())
 }
