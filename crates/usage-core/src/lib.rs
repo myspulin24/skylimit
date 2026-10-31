@@ -11,11 +11,15 @@
 //!  Claude Code status line files ─5 s poll────▶ claude_code.rs ┤
 //!  Claude Code ~/.claude.json ──5 s, on change▶ claude_config.rs┤
 //!  ČNB daily fixing (≤ 1×/day) ────────────────▶ fx.rs     ─┤
+//!  T3 Code usage cache (deleted transcripts) ──▶ t3_history.rs (core thread)
 //!                                                           ▼
 //!             core thread: store.rs ─▶ pricing.rs ─▶ score.rs ─▶ mood.rs
 //!                                                           │ watch
 //!                                                        Snapshot (no secrets)
 //! ```
+//!
+//! The History tab asks the core thread for a period on demand
+//! ([`CoreHandle::history`], `history.rs`); it never rides in the snapshot.
 //!
 //! Claude limits never touch Claude login data and never call Anthropic
 //! (terms gate): they come from the `rate_limit_event` messages the official
@@ -32,20 +36,22 @@ mod claude_limits;
 mod codex;
 mod diag;
 mod fx;
+mod history;
 pub mod model;
 mod mood;
 mod pricing;
 mod score;
 mod store;
 mod t3;
+mod t3_history;
 mod user_path;
 
 pub use model::*;
 /// Re-exported so the shell does not need its own `tokio` dependency.
 pub use tokio::sync::watch;
 
-use std::collections::{BTreeMap, HashSet, VecDeque};
-use std::path::PathBuf;
+use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{self, Receiver, RecvTimeoutError, Sender};
 use std::sync::{Arc, Mutex};
@@ -85,6 +91,8 @@ const PERIODIC_SECS: i64 = 30;
 const CELEBRATE_SECS: i64 = 4;
 const HEALTH_WINDOW: i64 = 3600;
 const LIMIT_HISTORY_DAYS: i64 = 90;
+/// How often T3 Code's usage cache is checked for a change.
+const T3_HISTORY_CHECK_SECS: i64 = 600;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CodexSource {
@@ -154,6 +162,10 @@ pub struct Config {
     /// Claude Code's `.claude.json` (see [`claude_config`]): the limits
     /// Claude Code caches for itself, the only source of the Fable limit.
     pub claude_config_file: Option<PathBuf>,
+    /// T3 Code's data folder (`%USERPROFILE%\.t3\userdata`): its usage cache
+    /// restores Claude history whose transcripts Claude Code already deleted
+    /// (see `t3_history.rs`).
+    pub t3_userdata_dir: Option<PathBuf>,
     pub diag_dir: PathBuf,
     pub codex: CodexSource,
     /// Initial settings; persisting them is the shell's job.
@@ -172,6 +184,7 @@ impl Config {
             t3_logs_dir: None,
             claude_code_dir: None,
             claude_config_file: None,
+            t3_userdata_dir: None,
             diag_dir,
             codex: CodexSource::official(),
             settings: Settings::default(),
@@ -209,6 +222,11 @@ pub(crate) enum CoreMsg {
     SettingsChanged,
     Refresh,
     ClearHistory(Sender<()>),
+    History {
+        range: HistoryRange,
+        filter: HistoryFilter,
+        reply: Sender<History>,
+    },
     Shutdown,
 }
 
@@ -349,6 +367,9 @@ impl Core {
             claude_fable_last_ts: store.meta_get("claude_fable_last_ts").and_then(|v| v.parse().ok()),
             codex_account: codex_account.clone(),
             claude_dir_exists: config.claude_projects_dir.is_dir(),
+            t3_userdata_dir: config.t3_userdata_dir.clone(),
+            t3_cache_seen: HashMap::new(),
+            t3_next_check: now,
             clock,
             diag,
             store,
@@ -448,6 +469,14 @@ impl CoreHandle {
         if self.tx.send(CoreMsg::ClearHistory(ack_tx)).is_ok() {
             let _ = ack_rx.recv_timeout(Duration::from_secs(10));
         }
+    }
+
+    /// History tab: consumption over `range`, priced now. Waits for the core
+    /// thread (up to 10 s); `None` when it does not answer.
+    pub fn history(&self, range: HistoryRange, filter: HistoryFilter) -> Option<History> {
+        let (reply, rx) = mpsc::channel();
+        self.tx.send(CoreMsg::History { range, filter, reply }).ok()?;
+        rx.recv_timeout(Duration::from_secs(10)).ok()
     }
 
     pub fn shutdown(mut self) {
@@ -582,6 +611,10 @@ struct CoreState {
     claude_epoch: u64,
     backfill: Backfill,
     claude_dir_exists: bool,
+    t3_userdata_dir: Option<PathBuf>,
+    /// Modification time of each T3 cache file when it was last imported.
+    t3_cache_seen: HashMap<PathBuf, i64>,
+    t3_next_check: i64,
     claude_last_ts: Option<i64>,
     /// Newest assistant line of a Fable model: only Fable work ages the
     /// weekly Fable window.
@@ -632,6 +665,7 @@ impl CoreState {
                 Err(RecvTimeoutError::Disconnected) => break,
             }
             let now = (self.clock)();
+            self.import_t3_history(now);
             if self.dirty || now >= self.next_recompute_at {
                 self.publish();
             }
@@ -673,9 +707,109 @@ impl CoreState {
                 self.publish();
                 let _ = ack.send(());
             }
+            CoreMsg::History { range, filter, reply } => {
+                let _ = reply.send(self.history(range, filter, now));
+            }
             CoreMsg::Update(u) => self.apply(u, now),
         }
         true
+    }
+
+    fn history(&self, range: HistoryRange, filter: HistoryFilter, now: i64) -> History {
+        let settings = self.settings.lock().map(|s| s.clone()).unwrap_or_default();
+        let codex_days = self.store.codex_buckets().unwrap_or_default();
+        let codex_enabled = !self.codex.disabled;
+        let first_claude = if filter == HistoryFilter::Codex {
+            None
+        } else {
+            self.store.first_usage_hour("claude")
+        };
+        let first_codex = if filter == HistoryFilter::Claude || !codex_enabled {
+            None
+        } else {
+            codex_days
+                .iter()
+                .filter(|(_, t)| *t > 0)
+                .filter_map(|(d, _)| NaiveDate::parse_from_str(d, "%Y-%m-%d").ok())
+                .min()
+                .map(score::local_midnight)
+        };
+        let first_data_at = first_claude.into_iter().chain(first_codex).min();
+        let period = history::Period::new(range, now, first_data_at);
+        let rows = self.store.usage_rows(period.from, period.query_end).unwrap_or_default();
+        let web = self.store.web_rows(period.from, period.query_end).unwrap_or_default();
+        history::build(
+            range,
+            filter,
+            now,
+            &history::Inputs {
+                rows: &rows,
+                web: &web,
+                codex_days: &codex_days,
+                prices: &self.prices,
+                codex_rate: self.prices.codex_blended_usd_per_token(),
+                codex_enabled,
+                conv: self.fx.usd_to(settings.currency),
+                currency: settings.currency,
+                first_data_at,
+            },
+        )
+    }
+
+    /// Claude history from T3 Code's usage cache for transcripts Claude Code
+    /// already deleted (`t3_history.rs`). Waits for the backfill (the layout
+    /// check needs Skylimit's own numbers), then rereads a cache file only
+    /// when it changed, checked every 10 minutes.
+    fn import_t3_history(&mut self, now: i64) {
+        let Some(dir) = self.t3_userdata_dir.clone() else { return };
+        if !self.backfill.done || now < self.t3_next_check {
+            return;
+        }
+        self.t3_next_check = now + T3_HISTORY_CHECK_SECS;
+        let mut added = 0;
+        for (path, mtime) in t3_history::cache_files(&dir) {
+            if self.t3_cache_seen.get(&path) == Some(&mtime) {
+                continue;
+            }
+            self.t3_cache_seen.insert(path.clone(), mtime);
+            let name = path.file_name().map(|n| n.to_string_lossy().into_owned()).unwrap_or_default();
+            let Some(messages) = std::fs::read_to_string(&path).ok().and_then(|t| t3_history::parse(&t)) else {
+                self.diag.log(now, "t3-history", &format!("{name}: not the known layout, skipped"));
+                continue;
+            };
+            let store = &self.store;
+            let plan = t3_history::plan(
+                &messages,
+                |key| store.seen_tokens(key),
+                |p| Path::new(p).exists(),
+                t3_history::project_from_folder,
+            );
+            match plan {
+                Ok(plan) if !plan.records.is_empty() => match self.store.apply_records(&plan.records) {
+                    Ok(0) => {}
+                    Ok(n) => {
+                        added += n;
+                        self.diag.log(
+                            now,
+                            "t3-history",
+                            &format!(
+                                "{name}: {n} messages from {} deleted transcripts restored ({} of {} known messages agree)",
+                                plan.files, plan.agree, plan.overlap
+                            ),
+                        );
+                    }
+                    Err(e) => self.diag.log(now, "t3-history", &format!("{name}: not stored: {e}")),
+                },
+                Ok(_) => {}
+                Err(e) => self.diag.log(now, "t3-history", &format!("{name}: {e}")),
+            }
+        }
+        if added > 0 {
+            // Old days are not live usage: a record they set is noted silently.
+            self.milestones_primed = false;
+            self.last_change_at = now;
+            self.dirty = true;
+        }
     }
 
     fn apply(&mut self, update: Update, now: i64) {
@@ -831,6 +965,8 @@ impl CoreState {
             files_total: 0,
         };
         self.health.clear();
+        self.t3_cache_seen.clear();
+        self.t3_next_check = now;
         self.claude_last_ts = None;
         self.claude_fable_last_ts = None;
         self.codex.usage_seen = false;
@@ -1146,6 +1282,9 @@ mod tests {
                 files_total: 0,
             },
             claude_dir_exists: true,
+            t3_userdata_dir: None,
+            t3_cache_seen: HashMap::new(),
+            t3_next_check: 0,
             claude_last_ts: None,
             claude_fable_last_ts: None,
             codex_account: Arc::new(Mutex::new(None)),
@@ -1250,6 +1389,64 @@ mod tests {
         let s = st.compute(t0 + 20);
         assert!(s.celebration.is_none());
         assert_eq!(st.queue.len(), 0);
+    }
+
+    #[test]
+    fn t3_cache_restores_deleted_transcripts_once_and_history_shows_them() {
+        let t0 = 1_793_190_000;
+        let mut st = bare_state(Arc::new(AtomicI64::new(t0)));
+        let tmp = tempfile::tempdir().unwrap();
+        st.t3_userdata_dir = Some(tmp.path().to_path_buf());
+        let live = tmp.path().join("C--dev-alpha").join("live.jsonl");
+        std::fs::create_dir_all(live.parent().unwrap()).unwrap();
+        std::fs::write(&live, "").unwrap();
+        let gone = tmp.path().join("C--dev-beta").join("gone.jsonl");
+        let key = |i: usize| claude::fnv1a64(&[format!("msg_{i}").as_bytes(), b"\x1f", format!("req_{i}").as_bytes()]);
+        let old = t0 - 60 * 86_400;
+        let mut tuples = Vec::new();
+        for i in 0..25 {
+            // Counted by Skylimit from the live transcript.
+            feed(&mut st, key(i), t0 - 3600, 100);
+            tuples.push((live.clone(), t0 - 3600, i));
+        }
+        for i in 100..103 {
+            tuples.push((gone.clone(), old, i));
+        }
+        let mut files = serde_json::Map::new();
+        for (path, ts, i) in tuples {
+            let entry = files
+                .entry(path.to_string_lossy().into_owned())
+                .or_insert_with(|| serde_json::json!({ "p": "claude", "r": [] }));
+            entry["r"].as_array_mut().unwrap().push(serde_json::json!([
+                ts * 1000, 0, 0, 0, 0, 0, 100, 0, format!("msg_{i}:req_{i}"), null, 0, null
+            ]));
+        }
+        let cache = serde_json::json!({ "version": 9, "models": ["claude-opus-5-5"], "sessions": [], "files": files });
+        std::fs::write(tmp.path().join("usage-scan-cache-v9.json"), cache.to_string()).unwrap();
+
+        // Not before the backfill: the layout check needs Skylimit's own numbers.
+        st.import_t3_history(t0);
+        assert_eq!(st.store.first_usage_hour("claude"), Some((t0 - 3600).div_euclid(3600) * 3600));
+
+        st.backfill.done = true;
+        st.import_t3_history(t0);
+        assert_eq!(st.store.first_usage_hour("claude"), Some(old.div_euclid(3600) * 3600));
+
+        let h = st.history(HistoryRange::All, HistoryFilter::All, t0);
+        assert_eq!(h.total_tokens, 28 * 100);
+        assert_eq!(h.first_data_at, Some(old.div_euclid(3600) * 3600));
+        let restored = h.by_source.iter().find(|r| r.key == t3_history::ENTRYPOINT).unwrap();
+        assert_eq!(restored.tokens, 300);
+        let project = t3_history::project_from_folder("C--dev-beta");
+        assert_eq!(h.by_project.iter().find(|r| r.key == project).map(|r| r.tokens), Some(300));
+        let week = st.history(HistoryRange::Week, HistoryFilter::Claude, t0);
+        assert_eq!(week.total_tokens, 25 * 100, "the old days stay out of the week");
+
+        // Unchanged cache: not read again; read again anyway: nothing doubles.
+        st.import_t3_history(t0 + T3_HISTORY_CHECK_SECS);
+        st.t3_cache_seen.clear();
+        st.import_t3_history(t0 + 2 * T3_HISTORY_CHECK_SECS);
+        assert_eq!(st.history(HistoryRange::All, HistoryFilter::All, t0).total_tokens, 28 * 100);
     }
 
     #[test]

@@ -56,6 +56,7 @@ pub fn run() {
             commands::open_feedback,
             commands::clear_history,
             commands::accounts,
+            commands::history,
             claude_code::claude_code_status,
             claude_code::claude_code_connect,
             claude_code::claude_code_disconnect,
@@ -96,6 +97,7 @@ fn setup(app: &AppHandle) -> tauri::Result<()> {
     let mut config = Config::new(paths.claude_projects.clone(), paths.db(), paths.diag());
     config.codex = CodexSource::official();
     config.t3_logs_dir = Some(paths.t3_logs.clone());
+    config.t3_userdata_dir = Some(paths.t3_userdata.clone());
     config.claude_code_dir = Some(paths.claude_code());
     config.claude_config_file = Some(paths.claude_global.clone());
     config.settings = settings.clone();

@@ -25,7 +25,7 @@ pub(crate) fn prague_date_string(ts: i64) -> String {
     prague_date(ts).format("%Y-%m-%d").to_string()
 }
 
-fn local_midnight(d: NaiveDate) -> i64 {
+pub(crate) fn local_midnight(d: NaiveDate) -> i64 {
     Prague
         .from_local_datetime(&d.and_hms_opt(0, 0, 0).unwrap_or_default())
         .earliest()

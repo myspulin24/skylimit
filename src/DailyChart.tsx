@@ -3,7 +3,7 @@
 // Geometry is in SVG attributes only (no inline styles, CSP-safe).
 
 import { useState } from "react";
-import { formatMoney, shortDate } from "./format";
+import { formatMoney, formatMoneyTick, shortDate } from "./format";
 import type { Snapshot } from "./types";
 
 const W = 640;
@@ -17,12 +17,13 @@ function daysInMonth(month: string): number {
   return new Date(Date.UTC(y, m, 0)).getUTCDate();
 }
 
-/** 1, 2, 2.5, 5 × 10^k ceiling, so the gridlines land on round amounts. */
+/** 1, 2, 4, 5 × 10^k ceiling, so the gridlines (top and half) land on round
+ * amounts: 25 would put the half line at 12.5. */
 export function niceCeil(value: number): number {
   if (value <= 0) return 1;
   const exp = Math.floor(Math.log10(value));
   const base = 10 ** exp;
-  for (const step of [1, 2, 2.5, 5, 10]) {
+  for (const step of [1, 2, 4, 5, 10]) {
     if (value <= step * base) return step * base;
   }
   return 10 * base;
@@ -66,7 +67,7 @@ export function DailyChart({ snapshot }: { snapshot: Snapshot }) {
             <g key={t}>
               <line x1={M.left} x2={W - M.right} y1={y(t)} y2={y(t)} className={t === 0 ? "baseline" : "gridline"} />
               <text x={M.left - 8} y={y(t) + 4} textAnchor="end" className="axis-label">
-                {formatMoney(t, currency)}
+                {formatMoneyTick(t, currency)}
               </text>
             </g>
           ))}

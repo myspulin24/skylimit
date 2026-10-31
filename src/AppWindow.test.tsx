@@ -2,6 +2,8 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings, fixtures, nowSec } from "./fixtures";
+import { mockHistory } from "./fixtures/history";
+import type { HistoryFilter, HistoryRange } from "./types";
 
 vi.mock("./api", () => ({
   isTauri: () => false,
@@ -26,6 +28,7 @@ vi.mock("./api", () => ({
   autostartStatus: vi.fn(() => Promise.resolve({ state: "off", problem: "" })),
   setAutostart: vi.fn((on: boolean) => Promise.resolve({ state: on ? "on" : "off", problem: "" })),
   getAccounts: vi.fn(() => Promise.resolve({ claude: null, codex: null, codexNote: null })),
+  getHistory: vi.fn((range: HistoryRange, filter: HistoryFilter) => Promise.resolve(mockHistory(range, filter, "EUR", nowSec()))),
 }));
 
 import * as api from "./api";

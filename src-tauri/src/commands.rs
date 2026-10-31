@@ -3,7 +3,7 @@
 //! which must not happen in a synchronous command on Windows.
 
 use tauri::{AppHandle, Manager, State};
-use usage_core::{Accounts, Provider, Settings, Snapshot};
+use usage_core::{Accounts, History, HistoryFilter, HistoryRange, Provider, Settings, Snapshot};
 
 use crate::shell::{self, Shell};
 use crate::windows;
@@ -72,6 +72,19 @@ pub async fn accounts(app: AppHandle) -> Result<Accounts, String> {
     })
     .await
     .map_err(|e| format!("Účty se nepodařilo načíst: {e}"))?
+}
+
+/// History tab: one period priced by the core thread. Waits for its answer
+/// (up to 10 s) on the blocking pool.
+#[tauri::command]
+pub async fn history(app: AppHandle, range: HistoryRange, filter: HistoryFilter) -> Result<History, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let shell = app.state::<Shell>();
+        let history = shell.core()?.history(range, filter);
+        history.ok_or_else(|| "Jádro aplikace neodpovídá.".to_string())
+    })
+    .await
+    .map_err(|e| format!("Historii se nepodařilo načíst: {e}"))?
 }
 
 /// Blocks until the core has emptied the tables (up to 10 s), so it runs on

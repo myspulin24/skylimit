@@ -13,7 +13,8 @@ import {
   type FixtureName,
 } from "./fixtures";
 import { PROVIDER_NAME } from "./format";
-import type { Accounts, AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
+import { mockHistory } from "./fixtures/history";
+import type { Accounts, AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, History, HistoryFilter, HistoryRange, PlanSetting, ProviderScore, Settings, Snapshot, UpdateStatus } from "./types";
 
 const clone = <T,>(value: T): T => structuredClone(value);
 
@@ -256,6 +257,14 @@ export async function setAutostart(on: boolean): Promise<AutostartStatus> {
   await new Promise((r) => setTimeout(r, 150));
   autostart = { ...autostart, state: on ? "on" : "off" };
   return autostart;
+}
+
+// History tab in the browser: generated days in the current currency;
+// `?history=empty` shows a fresh install.
+export async function getHistory(range: HistoryRange, filter: HistoryFilter): Promise<History> {
+  await new Promise((r) => setTimeout(r, 120));
+  const empty = new URLSearchParams(location.search).get("history") === "empty";
+  return mockHistory(range, filter, settings.currency, nowSec(), { empty, codexOff: base.scores.some((s) => s.provider === "codex" && s.state === "off") });
 }
 
 // Settings › Účty in the browser: `?accounts=none` shows both signed out.

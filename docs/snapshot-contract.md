@@ -95,7 +95,8 @@ Tauri commands (shell): `get_snapshot() -> Snapshot`, `get_settings() -> Setting
 `clear_history()`, `claude_code_status() / claude_code_connect() / claude_code_disconnect()
 -> ClaudeCodeStatus` (Settings › Claude Code; only the app window), `autostart_status() /
 autostart_set(on: bool) -> AutostartStatus` (Settings › Widget, the system's startup list; only the app window),
-`accounts() -> Accounts` (Settings › Účty; only the app window, never part of the snapshot). Event `"snapshot"` carries a full `Snapshot` on every change.
+`accounts() -> Accounts` (Settings › Účty; only the app window, never part of the snapshot),
+`history(range: HistoryRange, filter: HistoryFilter) -> History` (History tab; only the app window, never part of the snapshot). Event `"snapshot"` carries a full `Snapshot` on every change.
 
 ```ts
 /** The account Claude Code is signed in with (`oauthAccount` in its .claude.json). Raw enum values. */
@@ -135,6 +136,67 @@ export interface Accounts {
   claude: ClaudeAccount | null;
   codex: CodexAccount | null;
   codexNote: string | null;          // why there is no Codex account
+}
+```
+
+History tab: the core prices a period on request from the stored tokens, with the
+month's breakdowns. 24 h goes by hours, the rest by calendar days (Europe/Prague),
+today included; `all` starts on the first day with data. Codex reports daily totals
+only: it is one row (`key: "codex"`) in every breakdown, one part (`codex`) of the
+type split, priced at the blended rate (`estimate`), and absent from the 24 h view
+(`codexWithoutHours`). Cache savings = cache-read tokens × (input price − cache-read
+price). Claude history whose transcripts Claude Code already deleted (it keeps 30 days)
+is restored once from T3 Code's usage cache (`~/.t3/userdata/usage-scan-cache*.json`)
+after a layout check against the messages Skylimit counted itself; it carries the
+source `t3-cache`, and its output tokens are a lower bound (T3 keeps the first,
+partial count of a message).
+
+```ts
+export type HistoryRange = "24h" | "7d" | "30d" | "90d" | "all";
+export type HistoryFilter = "all" | "claude" | "codex";
+export type HistoryKind = "input" | "cacheRead" | "cacheWrite" | "output" | "webSearch" | "codex";
+
+export interface HistoryKindRow { kind: HistoryKind; tokens: number; display: number }
+
+export interface HistoryProvider {
+  provider: Provider;
+  display: number;
+  tokens: number;
+  unpricedTokens: number;            // never priced as 0
+  estimate: boolean;                 // Codex: daily totals × blended rate
+}
+
+export interface HistoryPoint {
+  start: number;                     // epoch s of the bucket's start (local midnight for days)
+  date: string | null;               // "2026-10-07" for day buckets
+  claudeDisplay: number;
+  codexDisplay: number;
+  claudeTokens: number;
+  codexTokens: number;
+}
+
+export interface HistoryRow { key: string; provider: Provider | null; display: number; tokens: number }
+
+export interface History {
+  range: HistoryRange;
+  filter: HistoryFilter;
+  currency: "EUR" | "CZK";
+  bucket: "hour" | "day";
+  from: number;                      // start of the first bucket
+  to: number;                        // time of the query
+  firstDataAt: number | null;        // oldest record of the shown providers
+  activeBuckets: number;             // days (hours in 24 h) with any tokens
+  totalDisplay: number;
+  totalTokens: number;
+  providers: HistoryProvider[];      // claude first; only the shown ones
+  kinds: HistoryKindRow[];           // fixed order, present ones only
+  cacheSavingsDisplay: number;
+  series: HistoryPoint[];
+  byModel: HistoryRow[];
+  byDay: HistoryRow[];               // newest first
+  bySource: HistoryRow[];            // "t3-cache" = restored from T3 Code
+  byProject: HistoryRow[];
+  codexWithoutHours: boolean;
 }
 ```
 

@@ -334,6 +334,131 @@ pub struct Accounts {
     pub codex_note: Option<String>,
 }
 
+/// History tab: the period it shows. 24 h goes by hours, the rest by
+/// calendar days in Europe/Prague, today included.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum HistoryRange {
+    #[serde(rename = "24h")]
+    Day,
+    #[serde(rename = "7d")]
+    Week,
+    #[serde(rename = "30d")]
+    Month,
+    #[serde(rename = "90d")]
+    Quarter,
+    /// From the first day with any data.
+    #[serde(rename = "all")]
+    All,
+}
+
+/// History tab: which provider it shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum HistoryFilter {
+    All,
+    Claude,
+    Codex,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum HistoryBucket {
+    Hour,
+    Day,
+}
+
+/// A part of the "by type" bar. Codex reports daily totals only, so its
+/// tokens are a part of their own; web searches are priced per request and
+/// carry no tokens.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum HistoryKind {
+    Input,
+    CacheRead,
+    CacheWrite,
+    Output,
+    WebSearch,
+    Codex,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryKindRow {
+    pub kind: HistoryKind,
+    pub tokens: u64,
+    pub display: f64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryProvider {
+    pub provider: Provider,
+    pub display: f64,
+    pub tokens: u64,
+    /// Tokens of models without a price (never priced as 0).
+    pub unpriced_tokens: u64,
+    /// Codex: daily totals × blended rate.
+    pub estimate: bool,
+}
+
+/// One bar of the chart: an hour (24 h) or a day.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryPoint {
+    /// Epoch s of the bucket's start (local midnight for days).
+    pub start: i64,
+    /// `YYYY-MM-DD` for day buckets.
+    pub date: Option<String>,
+    pub claude_display: f64,
+    pub codex_display: f64,
+    pub claude_tokens: u64,
+    pub codex_tokens: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct HistoryRow {
+    /// Model, entrypoint, project folder or `YYYY-MM-DD`; `codex` for
+    /// Codex's one row (it has no models, sources or projects).
+    pub key: String,
+    /// `None` for days, which mix both.
+    pub provider: Option<Provider>,
+    pub display: f64,
+    pub tokens: u64,
+}
+
+/// History tab (command `history`): consumption over a period with the same
+/// breakdowns as the month, priced now. Not part of the snapshot.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct History {
+    pub range: HistoryRange,
+    pub filter: HistoryFilter,
+    pub currency: Currency,
+    pub bucket: HistoryBucket,
+    /// Start of the first bucket and the time of the query (epoch s).
+    pub from: i64,
+    pub to: i64,
+    /// Oldest record of the shown providers: how far back history reaches.
+    pub first_data_at: Option<i64>,
+    /// Buckets with any tokens (active days, or hours in the 24 h view).
+    pub active_buckets: u32,
+    pub total_display: f64,
+    pub total_tokens: u64,
+    pub providers: Vec<HistoryProvider>,
+    pub kinds: Vec<HistoryKindRow>,
+    /// What reading from the cache saved against the full input price.
+    pub cache_savings_display: f64,
+    pub series: Vec<HistoryPoint>,
+    pub by_model: Vec<HistoryRow>,
+    /// Newest first.
+    pub by_day: Vec<HistoryRow>,
+    pub by_source: Vec<HistoryRow>,
+    pub by_project: Vec<HistoryRow>,
+    /// 24 h view with Codex on: Codex reports days, not hours.
+    pub codex_without_hours: bool,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PlanCurrency {
     #[serde(rename = "EUR")]

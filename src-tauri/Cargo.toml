@@ -1,6 +1,6 @@
 [package]
 name = "skylimit"
-version = "0.10.1"
+version = "0.11.0"
 description = "Skylimit – plovoucí widget s limity a skóre AI předplatného (Tauri 2 shell)"
 edition.workspace = true
 license.workspace = true

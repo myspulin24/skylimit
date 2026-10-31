@@ -58,6 +58,37 @@ vydání.
 
 ## [Nevydáno]
 
+## [0.11.0] — 2026-10-31
+
+### Přidáno
+
+- **Záložka Historie** v okně aplikace. Ukáže spotřebu za posledních
+  24 hodin, 7, 30 nebo 90 dní nebo za celou historii, v cenách API nebo
+  v tokenech, pro Claude a Codex dohromady nebo každý zvlášť:
+  - graf po hodinách nebo po dnech s tabulkou,
+  - součty: zpracované tokeny, z cache, bez cache, zápis do cache, výstup
+    a kolik ušetřila cache,
+  - cenu podle typu tokenů (vstup, čtení z cache, zápis do cache, výstup),
+  - rozpad podle modelu, dne, zdroje a projektu s cenou, podílem a tokeny.
+- **Starší historie z T3 Code.** Claude Code své záznamy po 30 dnech maže,
+  takže Skylimit dosud viděl jen poslední měsíc. T3 Code si čísla zpráv
+  pamatuje déle a Skylimit z jeho mezipaměti doplní, co už Claude Code
+  smazal. Nejdřív ověří, že čísla sedí se zprávami, které zná sám, a nic
+  nezapočítá dvakrát. Obnovené zprávy mají v rozpadu zdroj **Obnoveno
+  z T3 Code**. Výstupní tokeny v nich můžou být o něco nižší, protože T3
+  si u zprávy pamatuje první, ještě neúplný údaj.
+
+### Změněno
+
+- Osy grafů končí na kulatých částkách, prostřední čára už nevychází na
+  zaokrouhlenou hodnotu (například 12,5 € jako „13 €“).
+
+### Zabezpečení
+
+- Ze složky T3 Code se čtou jen soubory `usage-scan-cache*.json`, a z nich
+  jen čísla zpráv (čas, model, tokeny, identifikátor zprávy) a název složky
+  projektu. Text konverzací v nich není.
+
 ## [0.10.1] — 2026-10-29
 
 ### Změněno
@@ -334,7 +365,8 @@ Neveřejná verze, jen místní sestavení. Pracovní název „AI Usage“.
   ani Codexu a nevolá API Anthropicu. Diagnostický log obsahuje jen metadata,
   nikdy text konverzací.
 
-[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.10.1...HEAD
+[Nevydáno]: https://github.com/myspulin24/skylimit/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/myspulin24/skylimit/compare/v0.10.1...v0.11.0
 [0.10.1]: https://github.com/myspulin24/skylimit/compare/v0.10.0...v0.10.1
 [0.10.0]: https://github.com/myspulin24/skylimit/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/myspulin24/skylimit/compare/v0.8.0...v0.9.0

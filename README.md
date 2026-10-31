@@ -129,6 +129,11 @@ v aplikaci ukáže všechny s velkým animovaným náhledem.
 - **Měsíc:** skóre a násobek paušálu po poskytovatelích, denní graf, série
   dnů a rozpad podle zdroje (terminál, T3 Code, Claude Desktop, Codex),
   modelu a projektu.
+- **Historie:** spotřeba za 24 hodin, 7, 30 nebo 90 dní nebo za celou
+  historii, v cenách API nebo v tokenech, pro oba nástroje nebo každý zvlášť.
+  Graf po hodinách nebo dnech, součty (zpracované tokeny, z cache, bez cache,
+  zápis do cache, výstup a úspora díky cache), cena podle typu tokenů a rozpad
+  podle modelu, dne, zdroje a projektu.
 - **Stavy:** všechny nálady, stavy řádků limitů, značky u skóre a barvy ikony.
 - **Nastavení:** **Účty** (s jakým účtem Claude a Codexu je Skylimit
   spojený: e-mail, tarif, organizace nebo workspace, role, resety limitu),
@@ -152,11 +157,20 @@ Snímky v tomto README ukazují smyšlená demo data.
 | Limit Fable | Týdenní limit jen pro Fable z téže mezipaměti Claude Code (`weekly_scoped`) nebo z okna `seven_day_overage_included` v událostech T3 Code. Stárne jen prací s Fable | Stejně jako limity Claude |
 | Účty | Claude: `oauthAccount` v `~/.claude.json`. Codex: `account/read` z `codex app-server` | Při otevřeném Nastavení každých 20 s |
 | Skóre Claude | Záznamy Claude Code (`~/.claude/projects/**/*.jsonl`) × ceník API (snímek [LiteLLM](https://github.com/BerriAI/litellm)) | Hned po změně souboru |
+| Starší historie Claude | Mezipaměť přehledu spotřeby T3 Code (`~/.t3/userdata/usage-scan-cache*.json`), jen pro záznamy, které Claude Code už smazal | Po prvním načtení a pak při změně, kontrola každých 10 minut |
 | Kurz | Denní kurz [ČNB](https://www.cnb.cz) | Jednou denně |
 
 Skóre Codexu je **odhad**: Codex vrací jen denní součty tokenů bez rozpadu
 podle modelu, takže se násobí průměrnou sazbou. Ve widgetu je proto označené
 značkou „odhad“ a dá se vypnout v nastavení.
+
+**Starší historie z T3 Code:** Claude Code své záznamy po 30 dnech maže, takže
+Skylimit po instalaci vidí jen poslední měsíc. T3 Code si ale čísla každé zprávy,
+kterou kdy načetl, drží ve vlastní mezipaměti. Skylimit z ní vezme zprávy ze
+smazaných záznamů. Nejdřív ověří, že čísla u zpráv, které zná sám, sedí, a podle
+identifikátoru zprávy nic nezapočítá dvakrát. Obnovené zprávy mají zdroj
+„Obnoveno z T3 Code“. Výstupní tokeny v nich můžou být nižší: T3 si u zprávy
+pamatuje první, ještě neúplný údaj.
 
 **Proč ne přímo z účtu Claude:** podmínky Anthropicu nedovolují aplikacím
 třetích stran používat přihlašovací token Claude. Skylimit proto bere jen to,
@@ -258,6 +272,8 @@ crates/usage-core/       Jádro bez Tauri: zdroje dat, ceník, skóre, nálady, 
   src/claude_config.rs     účet a mezipaměť limitů z ~/.claude.json Claude Code
   src/claude_code.rs       limity ze stavového řádku Claude Code
   src/t3.rs                limity z logů T3 Code
+  src/t3_history.rs        starší historie z mezipaměti T3 Code
+  src/history.rs           záložka Historie: období, typy tokenů, rozpady
 src-tauri/               Shell: okna, ikona v oznamovací oblasti, příkazy, zpětná vazba
 feedback/                Cloudflare Worker, který ze zpětné vazby zakládá issue
 docs/snapshot-contract.md  Smlouva mezi jádrem a rozhraním
@@ -284,7 +300,9 @@ Přihlašovací údaje se nečtou nikdy: ani `~/.claude/.credentials.json`, ani
 Účet Codexu (e-mail, tarif, workspace) vrací `codex app-server` na dotaz
 `account/read`. Účty se ukazují jen v **Nastavení › Účty**, do widgetu ani
 do zpětné vazby se nedostanou. Z logů T3 Code, ve kterých jsou celé
-konverzace, se berou jen čísla limitů. Ze vstupu stavového řádku Claude Code si Skylimit
+konverzace, se berou jen čísla limitů. Z mezipaměti přehledu spotřeby T3 Code
+se berou jen čísla zpráv (čas, model, tokeny, identifikátor zprávy) a název
+složky projektu; text konverzací v ní není. Ze vstupu stavového řádku Claude Code si Skylimit
 nechá jen procenta limitů, čas resetu, identifikátor relace a počítadla, podle
 kterých pozná novou odpověď. Pracovní složku, model ani cestu k přepisu
 neukládá. Do `~/.claude/settings.json` zapisuje jen po kliknutí na

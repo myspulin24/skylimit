@@ -7,7 +7,9 @@ import {
   codexCreditsLabel,
   codexPlanLabel,
   extraUsageLabel,
+  dayLabel,
   formatDate,
+  formatMoneyTick,
   formatResets,
   formatAgo,
   formatDays,
@@ -15,6 +17,7 @@ import {
   formatMoney,
   formatMultiple,
   formatTokens,
+  hourLabel,
   monthLabel,
 } from "./format";
 import { parseAmount } from "./SettingsForm";
@@ -67,6 +70,18 @@ describe("format", () => {
     expect(parseAmount("0")).toBeNull();
     expect(parseAmount("abc")).toBeNull();
     expect(parseAmount("")).toBeNull();
+  });
+});
+
+describe("history labels", () => {
+  it("days with weekday, Prague hours, whole ticks without cents", () => {
+    expect(plain(dayLabel("2026-10-31"))).toBe("so 31. 10.");
+    expect(plain(dayLabel("2026-10-26", true))).toBe("po 26. 10. 2026");
+    // 2026-10-31T11:00Z is noon in Prague (CET).
+    expect(hourLabel(1_793_444_400)).toBe("12:00");
+    expect(plain(formatMoneyTick(5, "EUR"))).toBe("5 €");
+    expect(plain(formatMoneyTick(2.5, "EUR"))).toBe("2,50 €");
+    expect(plain(formatMoneyTick(250, "CZK"))).toBe("250 Kč");
   });
 });
 

@@ -68,6 +68,7 @@ impl Env {
             t3_logs_dir: None,
             claude_code_dir: None,
             claude_config_file: None,
+            t3_userdata_dir: None,
             db_path: self.tmp.path().join("skylimit-data").join("history.sqlite"),
             diag_dir: self.tmp.path().join("diag"),
             codex,

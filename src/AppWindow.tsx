@@ -1,4 +1,5 @@
-// Full app window: the month in detail, a guide to every state, the settings.
+// Full app window: the month in detail, the history of any period, a guide to
+// every state, the settings.
 // Same snapshot as the widget, more room: where the work came from, which
 // model, which project.
 
@@ -7,6 +8,7 @@ import { onOpenFeedback } from "./api";
 import { Character } from "./Character";
 import { DailyChart } from "./DailyChart";
 import { FeedbackDialog } from "./FeedbackDialog";
+import { HistoryView } from "./HistoryView";
 import { FeedbackIcon } from "./icons";
 import { UpdateBanner, useUpdate } from "./update";
 import {
@@ -28,10 +30,11 @@ import { StatesGuide } from "./StatesGuide";
 import type { BreakdownRow, Mood, Provider, ProviderScore, Snapshot } from "./types";
 import "./styles/app.css";
 
-type Tab = "month" | "states" | "settings";
+type Tab = "month" | "history" | "states" | "settings";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "month", label: "Měsíc" },
+  { id: "history", label: "Historie" },
   { id: "states", label: "Stavy" },
   { id: "settings", label: "Nastavení" },
 ];
@@ -101,6 +104,8 @@ export function AppWindow() {
           ) : (
             <p className="app-empty">{error ? `Jádro aplikace neodpovídá: ${error}` : "Načítám…"}</p>
           )
+        ) : tab === "history" ? (
+          <HistoryView snapshot={snapshot} />
         ) : tab === "states" ? (
           <StatesGuide snapshot={snapshot} />
         ) : (

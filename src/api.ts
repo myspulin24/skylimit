@@ -5,7 +5,7 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
-import type { Accounts, AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, Settings, Snapshot, UpdateStatus } from "./types";
+import type { Accounts, AutostartStatus, ClaudeCodeStatus, FeedbackReceipt, FeedbackRequest, FeedbackStatus, History, HistoryFilter, HistoryRange, Settings, Snapshot, UpdateStatus } from "./types";
 
 declare global {
   interface Window {
@@ -181,6 +181,12 @@ export async function autostartStatus(): Promise<AutostartStatus> {
 export async function setAutostart(on: boolean): Promise<AutostartStatus> {
   if (isTauri()) return invoke<AutostartStatus>("autostart_set", { on });
   return (await mock()).setAutostart(on);
+}
+
+/** History tab: one period with its breakdowns, priced by the core now. */
+export async function getHistory(range: HistoryRange, filter: HistoryFilter): Promise<History> {
+  if (isTauri()) return invoke<History>("history", { range, filter });
+  return (await mock()).getHistory(range, filter);
 }
 
 /** Settings › Účty: who Skylimit reads for Claude and Codex. */

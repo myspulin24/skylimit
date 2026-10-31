@@ -30,6 +30,11 @@ export function formatMoney(value: number, currency: Snapshot["currency"] | "USD
   return moneyFormat(currency, digits).format(value);
 }
 
+/** Axis tick: whole amounts without cents ("5 €"), the rest like formatMoney. */
+export function formatMoneyTick(value: number, currency: Snapshot["currency"] | "USD"): string {
+  return Number.isInteger(value) ? moneyFormat(currency, 0).format(value) : formatMoney(value, currency);
+}
+
 const multipleFormat = new Intl.NumberFormat("cs-CZ", {
   minimumFractionDigits: 1,
   maximumFractionDigits: 1,
@@ -181,6 +186,8 @@ const SOURCE_LABEL: Record<string, string> = {
   "sdk-ts": "T3 Code a další SDK",
   "claude-desktop": "Claude Desktop",
   codex: "Codex",
+  "t3-cache": "Obnoveno z T3 Code",
+  unknown: "Neznámý zdroj",
 };
 
 /** Entrypoint key → readable label; unknown keys are shown as they are. */
@@ -210,6 +217,23 @@ export function monthName(month: string): string {
 export function shortDate(date: string): string {
   const [, m, d] = date.split("-");
   return `${Number(d)}.${NBSP}${Number(m)}.`;
+}
+
+const WEEKDAYS = ["ne", "po", "út", "st", "čt", "pá", "so"];
+
+/** "2026-10-31" → "so 31. 10." (with the year when asked: "so 31. 10. 2026"). */
+export function dayLabel(date: string, withYear = false): string {
+  const [y, m, d] = date.split("-").map(Number);
+  if (!y || !m || !d) return date;
+  const weekday = WEEKDAYS[new Date(Date.UTC(y, m - 1, d)).getUTCDay()];
+  return `${weekday} ${shortDate(date)}${withYear ? `${NBSP}${y}` : ""}`;
+}
+
+const hourFormat = new Intl.DateTimeFormat("cs-CZ", { timeZone: "Europe/Prague", hour: "numeric", minute: "2-digit", hourCycle: "h23" });
+
+/** Epoch seconds → "14:00" (Prague). */
+export function hourLabel(epochSec: number): string {
+  return hourFormat.format(new Date(epochSec * 1000));
 }
 
 /** Score states that make the number uncertain enough to show a "?" on it. */

@@ -441,6 +441,7 @@ mod tests {
             claude_global: tmp.join(".claude.json"),
             claude_config,
             t3_logs: tmp.join("t3"),
+            t3_userdata: tmp.join("t3-userdata"),
         }
     }
 

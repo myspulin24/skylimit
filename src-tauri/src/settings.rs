@@ -53,6 +53,9 @@ pub struct DataPaths {
     /// T3 Code's provider logs, one source of Claude's limits
     /// (`%USERPROFILE%\.t3\userdata\logs\provider`).
     pub t3_logs: PathBuf,
+    /// T3 Code's data folder: its usage cache restores Claude history whose
+    /// transcripts Claude Code already deleted.
+    pub t3_userdata: PathBuf,
 }
 
 impl DataPaths {
@@ -95,6 +98,7 @@ impl DataPaths {
             claude_global: usage_core::claude_config::path(config_dir.as_deref(), home),
             claude_config,
             t3_logs: home.join(".t3").join("userdata").join("logs").join("provider"),
+            t3_userdata: home.join(".t3").join("userdata"),
         }
     }
 

@@ -185,3 +185,57 @@ export interface Accounts {
   codex: CodexAccount | null;
   codexNote: string | null;          // why there is no Codex account ("Codex CLI nenalezen", …)
 }
+
+// History tab, shell command `history` (src-tauri/src/commands.rs). Priced by
+// the core on demand from stored tokens; never part of the snapshot.
+
+/** 24 h goes by hours, the rest by calendar days (Europe/Prague), today included. */
+export type HistoryRange = "24h" | "7d" | "30d" | "90d" | "all";
+export type HistoryFilter = "all" | "claude" | "codex";
+/** "codex": Codex reports daily totals only, without types; "webSearch" carries no tokens. */
+export type HistoryKind = "input" | "cacheRead" | "cacheWrite" | "output" | "webSearch" | "codex";
+
+export interface HistoryKindRow { kind: HistoryKind; tokens: number; display: number }
+
+export interface HistoryProvider {
+  provider: Provider;
+  display: number;
+  tokens: number;
+  unpricedTokens: number;            // tokens of models without a price (never priced as 0)
+  estimate: boolean;                 // Codex: daily totals × blended rate
+}
+
+/** One bar: an hour (24 h) or a day. */
+export interface HistoryPoint {
+  start: number;                     // epoch s of the bucket's start (local midnight for days)
+  date: string | null;               // "2026-10-07" for day buckets
+  claudeDisplay: number;
+  codexDisplay: number;
+  claudeTokens: number;
+  codexTokens: number;
+}
+
+/** key = model, entrypoint, project folder or "2026-10-07"; "codex" is Codex's one row. */
+export interface HistoryRow { key: string; provider: Provider | null; display: number; tokens: number }
+
+export interface History {
+  range: HistoryRange;
+  filter: HistoryFilter;
+  currency: "EUR" | "CZK";
+  bucket: "hour" | "day";
+  from: number;                      // start of the first bucket, epoch s
+  to: number;                        // time of the query
+  firstDataAt: number | null;        // oldest record of the shown providers
+  activeBuckets: number;             // days (or hours in 24 h) with any tokens
+  totalDisplay: number;
+  totalTokens: number;
+  providers: HistoryProvider[];      // claude first; only the shown ones
+  kinds: HistoryKindRow[];           // input, cacheRead, cacheWrite, output, webSearch, codex (present ones)
+  cacheSavingsDisplay: number;       // cache reads against the full input price
+  series: HistoryPoint[];
+  byModel: HistoryRow[];
+  byDay: HistoryRow[];               // newest first
+  bySource: HistoryRow[];            // "t3-cache" = restored from T3 Code's usage cache
+  byProject: HistoryRow[];
+  codexWithoutHours: boolean;        // 24 h with Codex on: Codex reports days, not hours
+}

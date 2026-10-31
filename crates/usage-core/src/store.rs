@@ -238,6 +238,51 @@ impl Store {
         Ok(changed)
     }
 
+    /// Records that belong to no transcript file (history restored from T3
+    /// Code's cache), with the same dedupe as a file batch.
+    pub(crate) fn apply_records(&mut self, records: &[ClaudeRecord]) -> rusqlite::Result<usize> {
+        let tx = self.conn.transaction()?;
+        let mut changed = 0;
+        for rec in records {
+            if apply_record(&tx, rec)? {
+                changed += 1;
+            }
+        }
+        tx.commit()?;
+        Ok(changed)
+    }
+
+    /// Counted tokens of one message by its dedupe key: input, cache read,
+    /// cache write (5 min + 1 h), output.
+    pub(crate) fn seen_tokens(&self, key: u64) -> Option<[u64; 4]> {
+        self.conn
+            .prepare_cached(
+                "SELECT input, cache_read, cache_write_5m + cache_write_1h, output FROM seen_messages WHERE hash = ?1",
+            )
+            .ok()?
+            .query_row([key as i64], |r| {
+                Ok([
+                    r.get::<_, i64>(0)?.max(0) as u64,
+                    r.get::<_, i64>(1)?.max(0) as u64,
+                    r.get::<_, i64>(2)?.max(0) as u64,
+                    r.get::<_, i64>(3)?.max(0) as u64,
+                ])
+            })
+            .optional()
+            .ok()
+            .flatten()
+    }
+
+    /// The oldest hour with a provider's tokens.
+    pub(crate) fn first_usage_hour(&self, provider: &str) -> Option<i64> {
+        self.conn
+            .query_row("SELECT MIN(hour) FROM usage_hourly WHERE provider = ?1", [provider], |r| {
+                r.get::<_, Option<i64>>(0)
+            })
+            .ok()
+            .flatten()
+    }
+
     pub(crate) fn usage_rows(&self, start_hour: i64, end_hour: i64) -> rusqlite::Result<Vec<UsageRow>> {
         let mut stmt = self.conn.prepare_cached(
             "SELECT hour, provider, model, entrypoint, project, speed, service_tier, long_context, token_kind, tokens
